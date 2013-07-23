@@ -29,14 +29,8 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Data.Default (Default, def)
 
+import Network.JobQueue.Class
 import Network.JobQueue.JobEnv
-import Network.JobQueue.Util.Desc
-
---------------------------------
-
-class (Read a, Show a, Desc a) => Unit a where
-  getPriority :: a -> Int
-  getRecovery :: a -> a
 
 --------------------------------
 

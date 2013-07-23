@@ -16,7 +16,7 @@ import Data.Time.Clock
 import System.Log.Logger
 import System.IO
 
-import Network.JobQueue.Util.Desc
+import Network.JobQueue.Class
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 

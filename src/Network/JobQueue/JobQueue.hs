@@ -18,7 +18,7 @@ import System.Log.Logger
 import Control.Monad
 import Data.Maybe
 
-import Network.JobQueue.Util.Desc
+import Network.JobQueue.Class
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job
