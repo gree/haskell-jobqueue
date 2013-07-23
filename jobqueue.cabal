@@ -1,0 +1,36 @@
+Name:           jobqueue
+Version:        0.0.1
+Description:    A job queue library using Zookeeper
+License:        TBD
+License-file:   LICENSE
+Author:         Kiyoshi Ikehara
+Maintainer:     Kiyoshi Ikehara
+Copyright:      GREE, Inc.
+Build-Type:     Simple
+Cabal-Version:  >=1.8
+
+Library
+  Ghc-Options:     -O2 -Wall
+  Build-Depends:   base                     >= 4 && < 5
+                 , mtl
+                 , network                  >= 2.3.2
+                 , hslogger
+                 , resourcet                >= 0.4 && < 0.5
+                 , text
+                 , bytestring
+                 , unix
+                 , containers
+                 , split
+                 , stm                      >= 2.4
+                 , time
+                 , data-default
+                 , zookeeper
+  Hs-source-dirs:  src
+  Exposed-modules: Network.JobQueue
+                 , Network.JobQueue.Types
+                 , Network.JobQueue.Action
+                 , Network.JobQueue.Job
+                 , Network.JobQueue.JobQueue
+                 , Network.JobQueue.JobEnv
+                 , Network.JobQueue.JobResult
+  Extensions:      DeriveDataTypeable
