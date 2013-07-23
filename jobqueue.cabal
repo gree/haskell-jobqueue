@@ -27,10 +27,13 @@ Library
                  , zookeeper
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
+                 , Network.JobQueue.Class
                  , Network.JobQueue.Types
                  , Network.JobQueue.Action
                  , Network.JobQueue.Job
                  , Network.JobQueue.JobQueue
                  , Network.JobQueue.JobEnv
                  , Network.JobQueue.JobResult
+  Other-modules:   Network.JobQueue.Backend
+                 , Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
