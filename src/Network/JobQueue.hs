@@ -5,20 +5,18 @@ module Network.JobQueue (
   , Unit(..)
   , ActionM
   , JobM
-  , JobActionState
-  , JobState(..)
   , FailureHandleFn
   , AfterExecuteHandleFn
-  , JobResult
   , Desc
-  , createJob
   , openSession
   , closeSession
   , openJobQueue
+  , closeJobQueue
+  , process
+  , createJob
   , executeJob
   , scheduleJob
   , deleteJob
-  , buildActionState
   , fin
   , none
   , next
@@ -30,7 +28,6 @@ module Network.JobQueue (
   , abort
   , logMsg
   , result
-  , process
   , commitIO
   , module Network.JobQueue.JobEnv
   , module Network.JobQueue.JobResult

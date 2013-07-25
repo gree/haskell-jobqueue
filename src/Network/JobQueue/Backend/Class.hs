@@ -13,4 +13,6 @@ class BackendQueue q where
   listQueue    :: q -> IO ([BS.ByteString])
   itemsQueue   :: q -> IO ([String])
   countQueue   :: q -> IO (Int)
+  closeQueue   :: q -> IO ()
+  closeQueue _ = return ()
 

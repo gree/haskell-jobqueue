@@ -7,7 +7,6 @@ import Prelude hiding (takeWhile)
 import Control.Exception (throwIO)
 import qualified Data.ByteString.Char8 as BS
 import Network.JobQueue.Backend.Class ()
-
 import Network.JobQueue.Backend.Types
 import Network.JobQueue.Backend.Zookeeper
 

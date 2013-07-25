@@ -43,7 +43,7 @@ Library
                  , Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 
-Executable jobqueue-hello
+Executable jobqueue-sample-hello
   Ghc-Options:     -threaded -O2 -Wall -rtsopts
   Build-Depends:   base >=4 && <5
                  , jobqueue

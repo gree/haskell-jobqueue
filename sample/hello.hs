@@ -1,34 +1,31 @@
 
 import Network.JobQueue
 import Data.Default
+import Control.Exception
 
-data JobUnit = HelloState | WorldState deriving (Show, Read)
+data JobUnit = HelloStep | WorldStep deriving (Show, Read)
 
 instance Unit JobUnit where
   getPriority _ju = 1
-  getRecovery _ju = HelloState
+  getRecovery _ju = HelloStep
 
 instance Desc JobUnit where
 
 main = do
-  session <- openSession "zookeeper://10.0.62.86:2181/jobqueue"
-  jq <- openJobQueue session "/test" def $ do
-    process $ \ju -> case ju of
-      HelloState -> do
-        commitIO $ putStr "hello, "
-        next WorldState
-      _ -> none
-    process $ \ju -> case ju of
-      WorldState -> do
+  bracket (openSession "zookeeper://10.0.62.86:2181/jobqueue") (closeSession) $ \session -> do
+    jq <- openJobQueue session "/test" def $ do
+      process $ \WorldStep -> do
         commitIO $ putStrLn "world"
         fin
-      _ -> none
-  scheduleJob jq HelloState
-  let exec = executeJob jq (initJobEnv "hoge" "hoge" [])
-  exec
-  exec
-  exec
-  exec
-  closeSession session
-  return ()
+      process $ \HelloStep -> do
+        commitIO $ putStr "hello, "
+        next WorldStep
+    scheduleJob jq HelloStep
+    let exec = executeJob jq (initJobEnv "hoge" "hoge" [])
+    exec
+    exec
+    exec
+    exec
+    closeJobQueue jq
+    return ()
   

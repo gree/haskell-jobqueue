@@ -10,8 +10,7 @@ openZookeeperBackend coord = do
   Z.setDebugLevel Z.LogDisabled
   zh <- Z.init coord Nothing 100000
   return $ Backend {
-      openQueue = \queueName -> return $ initZQueue zh queueName Z.OpenAclUnsafe
-    , closeQueue = \queue -> return ()
-    , close = \_ -> Z.close zh
+      bOpenQueue = \queueName -> return $ initZQueue zh queueName Z.OpenAclUnsafe
+    , bClose = \_ -> Z.close zh
     }
 

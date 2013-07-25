@@ -9,6 +9,7 @@ module Network.JobQueue.JobQueue (
   , openSession
   , closeSession
   , openJobQueue
+  , closeJobQueue
   , executeJob
   , scheduleJob
   , deleteJob
@@ -74,11 +75,14 @@ openSession :: String -> IO (Session)
 openSession locator = Session locator <$> openBackend locator
 
 closeSession :: Session -> IO ()
-closeSession (Session _locator backend@(Backend { close = c })) = c backend
+closeSession (Session _locator backend@(Backend { bClose = c })) = c backend
 
 openJobQueue :: (Unit a) => Session -> String -> Settings a -> JobM a () -> IO (JobQueue a)
-openJobQueue (Session _locator _backend@(Backend { openQueue = oq })) name (Settings fhFn aeFn) jobm = do
+openJobQueue (Session _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
   JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
+
+closeJobQueue :: (Unit a) => JobQueue a -> IO ()
+closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
 
 executeJob :: (Unit a) => JobQueue a -> JobEnv -> IO ()
 executeJob jobqueue env = do
