@@ -1,7 +1,7 @@
 Name:           jobqueue
-Version:        0.0.1
+Version:        0.0.2
 Description:    A job queue library using Zookeeper
-License:        TBD
+-- License:        TBD
 License-file:   LICENSE
 Author:         Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
 Maintainer:     Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
