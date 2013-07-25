@@ -23,7 +23,7 @@ import Data.List
 import Control.Monad
 import Data.Maybe
 
-import Network.JobQueue.Backend
+import Network.JobQueue.Backend.Class
 
 data ZookeeperQueue = ZookeeperQueue {
     zqHandle         :: Z.ZHandle

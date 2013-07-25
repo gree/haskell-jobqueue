@@ -26,6 +26,8 @@ import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Exception (catch)
+import Control.Exception.Base (PatternMatchFail(..))
 
 import Data.Maybe
 import Data.Time.Clock
@@ -45,10 +47,14 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
     runActionState' actions' = case actions' of
       [] -> return (Nothing)
       (act:acts) -> do
-        r <- act env ju
+        r <- act env ju `catch` handleFail
         case r of
           Nothing -> runActionState' acts
           Just _ -> return (r)
+
+    handleFail :: PatternMatchFail -> IO (Maybe (JobResult a))
+    handleFail (PatternMatchFail msg) = do
+      return (Nothing)
 
 runAction :: (Unit a) => JobEnv -> a -> ActionM a () -> IO (Maybe (JobResult a))
 runAction env ju action = do

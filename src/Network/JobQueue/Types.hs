@@ -93,3 +93,4 @@ newtype ActionM a b = ActionM { runAM :: ErrorT ActionError (ReaderT (ActionEnv 
 setResult :: (Unit a) => Maybe (JobResult a) -> JobResultState a -> JobResultState a
 setResult result _ = result
 
+--------------------------------

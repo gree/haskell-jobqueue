@@ -26,6 +26,8 @@ Library
                  , time
                  , data-default
                  , zookeeper
+                 , attoparsec
+                 , data-default
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -36,5 +38,24 @@ Library
                  , Network.JobQueue.JobEnv
                  , Network.JobQueue.JobResult
   Other-modules:   Network.JobQueue.Backend
+                 , Network.JobQueue.Backend.Class
+                 , Network.JobQueue.Backend.Types
+                 , Network.JobQueue.Backend.Zookeeper
                  , Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
+  Extensions:      DeriveDataTypeable
+
+Executable jobqueue-sample-hello
+  Ghc-Options:     -threaded -O2 -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , network
+                 , split
+                 , bytestring
+                 , containers
+                 , process
+                 , time
+                 , unix
+                 , data-default
+  Hs-source-dirs:  sample
+  Main-is:         hello.hs
   Extensions:      DeriveDataTypeable
