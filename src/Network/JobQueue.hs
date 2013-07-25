@@ -14,6 +14,7 @@ module Network.JobQueue (
   , closeSession
   , openJobQueue
   , closeJobQueue
+  , countJobQueue
   , process
   , createJob
   , executeJob
@@ -35,7 +36,6 @@ module Network.JobQueue (
   , module Network.JobQueue.JobResult
   , buildJobQueue
   , runJobQueue
-  , onJobQueue
   ) where
 
 import Prelude hiding (log)
@@ -66,9 +66,3 @@ runJobQueue loc name jobm = buildJobQueue loc name jobm loop
       count <- countJobQueue jq
       when (count > 0) $ loop jq
 
-onJobQueue :: (Unit a) => String -> String -> (JobQueue a -> IO ()) -> IO ()
-onJobQueue loc name act = do
-  bracket (openSession loc) (closeSession) $ \session -> do
-    jq <- openJobQueue session name def (return ())
-    act jq
-    closeJobQueue jq
