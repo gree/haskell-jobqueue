@@ -2,19 +2,17 @@
 module Network.JobQueue.JobEnv (
     JobEnv
   , initJobEnv
-  , envClusterName
-  , envCoord
-  , envConfigParameters
+  , envLocator
+  , envName
+  , envParameters
   ) where
 
-type ConfigParameters = [(String, String)]
-
 data JobEnv = JobEnvV1 {
-    envClusterName :: String
-  , envCoord :: String
-  , envConfigParameters :: ConfigParameters
+    envLocator    :: String
+  , envName       :: String
+  , envParameters :: [(String, String)]
   } deriving (Eq, Show)
 
-initJobEnv :: String -> String -> ConfigParameters -> JobEnv
+initJobEnv :: String -> String -> [(String, String)] -> JobEnv
 initJobEnv = JobEnvV1
 

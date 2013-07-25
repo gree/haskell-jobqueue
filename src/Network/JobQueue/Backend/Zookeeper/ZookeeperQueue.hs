@@ -41,7 +41,7 @@ instance BackendQueue ZookeeperQueue where
   writeQueue'  = writeZQueue'
   listQueue    = listZQueue
   itemsQueue   = itemsQueue
-  countQueue   = countQueue
+  countQueue   = countZQueue
   
 
 maxPrio :: Int

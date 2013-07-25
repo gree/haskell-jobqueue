@@ -4,8 +4,8 @@ module Network.JobQueue.Action (
   , buildActionState
   , runActionState
   , runAction
-  , clusterName
   , getEnv
+  , myname
   , param
   , result
   , next
@@ -76,18 +76,16 @@ getEnv = getJobEnv <$> ask
 param :: (Unit a, Read b) => (String, String) -> ActionM a (b)
 param (key, defaultValue) = do
   env <- getEnv
-  let cp = envConfigParameters env
-  let def' = maybeRead defaultValue
-  case def' of
+  case maybeRead defaultValue of
     Nothing -> abort Critical $ "internal error. no parse: " ++ show (key, defaultValue)
-    Just defaultValue' -> case lookup key cp of
+    Just defaultValue' -> case lookup key (envParameters env) of
       Just value -> return (fromMaybe defaultValue' (maybeRead value))
       Nothing -> return (defaultValue')
   where
     maybeRead = fmap fst . listToMaybe . reads
       
-clusterName :: (Unit a) => ActionM a String
-clusterName = do { env <- getEnv; return (envClusterName env) }
+myname :: (Unit a) => ActionM a String
+myname = getEnv >>= return .envName
 
 ----------------
 

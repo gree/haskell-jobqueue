@@ -15,16 +15,9 @@ instance Desc JobUnit where
 main = do
   args <- getArgs
   case args of
-    (loc:_) -> bracket (openSession loc) (closeSession) $ \session -> do
-      jq <- openJobQueue session "/test" def $ do
-        process $ \WorldStep -> commitIO (putStrLn "world") >> fin
-        process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+    (loc:"run":[]) -> runJobQueue loc "/test" $ do
+      process $ \WorldStep -> commitIO (putStrLn "world") >> fin
+      process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+    (loc:"init":[]) -> onJobQueue loc "/test" $ \jq -> do
       scheduleJob jq HelloStep
-      let exec = executeJob jq (initJobEnv "hoge" "hoge" [])
-      exec
-      exec
-      exec
-      exec
-      closeJobQueue jq
-      return ()
     _ -> return ()

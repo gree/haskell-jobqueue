@@ -10,6 +10,7 @@ module Network.JobQueue.JobQueue (
   , closeSession
   , openJobQueue
   , closeJobQueue
+  , countJobQueue
   , executeJob
   , scheduleJob
   , deleteJob
@@ -83,6 +84,9 @@ openJobQueue (Session _locator _backend@(Backend { bOpenQueue = oq })) name (Set
 
 closeJobQueue :: (Unit a) => JobQueue a -> IO ()
 closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
+
+countJobQueue :: JobQueue a -> IO (Int)
+countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
 executeJob :: (Unit a) => JobQueue a -> JobEnv -> IO ()
 executeJob jobqueue env = do
