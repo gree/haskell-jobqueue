@@ -1,15 +1,20 @@
 
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Network.JobQueue.JobQueue (
     JobQueue
   , FailureHandleFn
   , AfterExecuteHandleFn
-  , initJobQueue
+  , Session
+  , openSession
+  , openJobQueue
   , executeJob
   , scheduleJob
   , deleteJob
   ) where
 
 import Prelude hiding (catch)
+import Control.Applicative
 import qualified Data.ByteString.Char8 as C
 import qualified Zookeeper as Z
 import Control.Exception
@@ -24,27 +29,29 @@ import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.JobEnv
 import Network.JobQueue.Backend
-import Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
+import Network.JobQueue.Backend.Class
+import Network.JobQueue.Backend.Types
 
 data ErrorAction = Delete | Skip
 
 type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
 type AfterExecuteHandleFn a = Job a -> IO ()
 
-data JobQueue a = JobQueue {
-    jqZq :: ZookeeperQueue
+data JobQueue a = forall q . (BackendQueue q) => JobQueue {
+    jqBackendQueue :: q
   , jqActionState :: JobActionState a
   , jqFailureHandleFn :: FailureHandleFn a
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
   }
 
-initJobQueue :: (Unit a) => Z.ZHandle -> String -> JobActionState a -> FailureHandleFn a -> AfterExecuteHandleFn a -> JobQueue a
-initJobQueue zh path a fhFn aeFn = JobQueue {
-    jqZq = initZQueue zh path Z.OpenAclUnsafe
-  , jqActionState = a
-  , jqFailureHandleFn = fhFn
-  , jqAfterExecuteFn = aeFn
-  }
+data Session = Session String Backend
+
+openSession :: String -> IO (Session)
+openSession locator = Session locator <$> openBackend locator
+
+openJobQueue :: (Unit a) => Session -> String -> JobActionState a -> FailureHandleFn a -> AfterExecuteHandleFn a -> IO (JobQueue a)
+openJobQueue (Session _locator _backend@(Backend { openQueue = oq })) name actionState fhFn aeFn = do
+  JobQueue <$> oq name <*> pure actionState <*> pure fhFn <*> pure aeFn
 
 executeJob :: (Unit a) => JobQueue a -> JobEnv -> IO ()
 executeJob jobqueue env = do
@@ -76,18 +83,18 @@ executeJob jobqueue env = do
     idSuffixLen = 10
 
 scheduleJob :: (Unit a) => JobQueue a -> a -> IO ()
-scheduleJob jqueue ju = do
+scheduleJob JobQueue { jqBackendQueue = bq } ju = do
   job <- createJob Initialized ju
-  void $ writeQueue' (jqZq jqueue) (pack job) (getPriority ju)
+  void $ writeQueue' bq (pack job) (getPriority ju)
 
 deleteJob :: (Unit a) => JobQueue a -> String -> IO (Bool)
-deleteJob jqueue nodeName = deleteQueue (jqZq jqueue) nodeName
+deleteJob JobQueue { jqBackendQueue = bq } nodeName = deleteQueue bq nodeName
 
 ---------------------------------------------------------------- PRIVATE
 
 peekJob :: (Unit a) => JobQueue a -> IO (Maybe (Job a, String, Int))
-peekJob jqueue = do
-  obj <- peekQueue $ jqZq jqueue
+peekJob JobQueue { jqBackendQueue = bq } = do
+  obj <- peekQueue bq
   case obj of
     Nothing -> return (Nothing)
     Just (value, nodeName, version) -> do
@@ -98,7 +105,7 @@ peekJob jqueue = do
     maybeRead = fmap fst . listToMaybe . reads
 
 executeJob' :: (Unit a) => JobQueue a -> JobEnv -> String -> Job a -> Int -> IO (Maybe (JobResult a))
-executeJob' jqueue jobEnv nodeName currentJob version = do
+executeJob' jqueue@JobQueue { jqBackendQueue = bq } jobEnv nodeName currentJob version = do
   currentTime <- getCurrentTime
   if jobOnTime currentJob < currentTime
     then do
@@ -106,7 +113,7 @@ executeJob' jqueue jobEnv nodeName currentJob version = do
       runActionState (jqActionState jqueue) jobEnv (jobUnit currentJob) `catch` handleSome
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
-      when r $ void $ writeQueue' (jqZq jqueue) (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
+      when r $ void $ writeQueue' bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
       return (Nothing)
   where
     handleSome :: SomeException -> IO (Maybe (JobResult a))
@@ -146,15 +153,15 @@ afterExecuteJob jqueue nodeName currentJob version mResult = case mResult of
         return ()
 
 rescheduleJob :: (Unit a) => JobQueue a -> Maybe UTCTime -> a -> IO ()
-rescheduleJob jqueue mOntime ju = do
+rescheduleJob JobQueue { jqBackendQueue = bq } mOntime ju = do
   job <- case mOntime of
     Just ontime -> createOnTimeJob Initialized ontime ju
     Nothing -> createJob Initialized ju
-  void $ writeQueue' (jqZq jqueue) (pack $ job) (getPriority ju)
+  void $ writeQueue' bq (pack $ job) (getPriority ju)
 
 updateJob :: (Unit a) => JobQueue a -> String -> Job a -> Int -> IO (Bool)
-updateJob jqueue nodeName job version = do
-  updateQueue (jqZq jqueue) nodeName (pack job) version `catch` handleError
+updateJob JobQueue { jqBackendQueue = bq } nodeName job version = do
+  updateQueue bq nodeName (pack job) version `catch` handleError
   where
     handleError :: Z.ZooError -> IO (Bool)
     handleError _e = do

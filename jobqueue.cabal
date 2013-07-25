@@ -25,6 +25,7 @@ Library
                  , time
                  , data-default
                  , zookeeper
+                 , attoparsec
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -34,6 +35,7 @@ Library
                  , Network.JobQueue.JobQueue
                  , Network.JobQueue.JobEnv
                  , Network.JobQueue.JobResult
-  Other-modules:   Network.JobQueue.Backend
+                 , Network.JobQueue.Backend
+  Other-modules:   Network.JobQueue.Backend.Class
                  , Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable

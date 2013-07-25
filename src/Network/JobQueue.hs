@@ -11,7 +11,8 @@ module Network.JobQueue (
   , AfterExecuteHandleFn
   , JobResult
   , createJob
-  , initJobQueue
+  , openSession
+  , openJobQueue
   , executeJob
   , scheduleJob
   , deleteJob
@@ -40,3 +41,5 @@ import Network.JobQueue.JobQueue
 import Network.JobQueue.JobEnv
 import Network.JobQueue.Job
 import Network.JobQueue.JobResult
+
+
