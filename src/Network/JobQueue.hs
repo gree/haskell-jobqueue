@@ -10,6 +10,7 @@ module Network.JobQueue (
   , FailureHandleFn
   , AfterExecuteHandleFn
   , JobResult
+  , Desc
   , createJob
   , openSession
   , openJobQueue
@@ -36,6 +37,7 @@ module Network.JobQueue (
 
 import Prelude hiding (log)
 import Network.JobQueue.Types
+import Network.JobQueue.Class
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.JobEnv

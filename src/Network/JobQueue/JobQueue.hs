@@ -22,6 +22,8 @@ import Data.Time.Clock
 import System.Log.Logger
 import Control.Monad
 import Data.Maybe
+import Data.Default
+import System.IO
 
 import Network.JobQueue.Class
 import Network.JobQueue.Types
@@ -37,6 +39,27 @@ data ErrorAction = Delete | Skip
 type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
 type AfterExecuteHandleFn a = Job a -> IO ()
 
+data Settings a = Settings {
+    jqsFailureHandleFn :: FailureHandleFn a
+  , jqsAfterExecuteFn :: AfterExecuteHandleFn a
+  }
+
+instance (Unit a) => Default (Settings a) where
+  def = Settings handleFailure handleAfterExecute
+    where
+      handleFailure :: (Unit a) => FailureHandleFn a
+      handleFailure al subject msg mjob = do
+        hPutStrLn stderr msg
+        hFlush stderr
+        case mjob of
+          Just job -> do
+            nextJob <- createJob Runnable (getRecovery (jobUnit job))
+            return (Just nextJob)
+          Nothing -> return (Nothing)
+
+      handleAfterExecute :: (Unit a) => Job a -> IO ()
+      handleAfterExecute job = return ()
+
 data JobQueue a = forall q . (BackendQueue q) => JobQueue {
     jqBackendQueue :: q
   , jqActionState :: JobActionState a
@@ -49,9 +72,9 @@ data Session = Session String Backend
 openSession :: String -> IO (Session)
 openSession locator = Session locator <$> openBackend locator
 
-openJobQueue :: (Unit a) => Session -> String -> JobActionState a -> FailureHandleFn a -> AfterExecuteHandleFn a -> IO (JobQueue a)
-openJobQueue (Session _locator _backend@(Backend { openQueue = oq })) name actionState fhFn aeFn = do
-  JobQueue <$> oq name <*> pure actionState <*> pure fhFn <*> pure aeFn
+openJobQueue :: (Unit a) => Session -> String -> Settings a -> JobM a () -> IO (JobQueue a)
+openJobQueue (Session _locator _backend@(Backend { openQueue = oq })) name (Settings fhFn aeFn) jobm = do
+  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
 
 executeJob :: (Unit a) => JobQueue a -> JobEnv -> IO ()
 executeJob jobqueue env = do
