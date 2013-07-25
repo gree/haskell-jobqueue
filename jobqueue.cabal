@@ -3,10 +3,11 @@ Version:        0.0.1
 Description:    A job queue library using Zookeeper
 License:        TBD
 License-file:   LICENSE
-Author:         Kiyoshi Ikehara
-Maintainer:     Kiyoshi Ikehara
+Author:         Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+Maintainer:     Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
 Copyright:      GREE, Inc.
 Build-Type:     Simple
+Category:       Network
 Cabal-Version:  >=1.8
 
 Library
