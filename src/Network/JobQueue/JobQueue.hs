@@ -7,6 +7,7 @@ module Network.JobQueue.JobQueue (
   , AfterExecuteHandleFn
   , Session
   , openSession
+  , closeSession
   , openJobQueue
   , executeJob
   , scheduleJob
@@ -40,8 +41,8 @@ type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe
 type AfterExecuteHandleFn a = Job a -> IO ()
 
 data Settings a = Settings {
-    jqsFailureHandleFn :: FailureHandleFn a
-  , jqsAfterExecuteFn :: AfterExecuteHandleFn a
+    _failureHandleFn :: FailureHandleFn a
+  , _afterExecuteFn :: AfterExecuteHandleFn a
   }
 
 instance (Unit a) => Default (Settings a) where
@@ -71,6 +72,9 @@ data Session = Session String Backend
 
 openSession :: String -> IO (Session)
 openSession locator = Session locator <$> openBackend locator
+
+closeSession :: Session -> IO ()
+closeSession (Session _locator backend@(Backend { close = c })) = c backend
 
 openJobQueue :: (Unit a) => Session -> String -> Settings a -> JobM a () -> IO (JobQueue a)
 openJobQueue (Session _locator _backend@(Backend { openQueue = oq })) name (Settings fhFn aeFn) jobm = do

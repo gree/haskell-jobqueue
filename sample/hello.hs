@@ -1,28 +1,34 @@
 
 import Network.JobQueue
-import System.IO
 import Data.Default
 
-data JobUnit = InitialState | EndState deriving (Show, Read)
+data JobUnit = HelloState | WorldState deriving (Show, Read)
 
 instance Unit JobUnit where
   getPriority _ju = 1
-  getRecovery _ju = InitialState
+  getRecovery _ju = HelloState
 
 instance Desc JobUnit where
-  
-
-action ju@InitialState = do
-  return ()
-
-action ju@EndState = do
-  return ()
-
-action _ = fin
 
 main = do
-  session <- openSession "zookeeper://10.0.62.86:2181/hello"
-  jq <- openJobQueue session "test" def $ do
-    process action
+  session <- openSession "zookeeper://10.0.62.86:2181/jobqueue"
+  jq <- openJobQueue session "/test" def $ do
+    process $ \ju -> case ju of
+      HelloState -> do
+        commitIO $ putStr "hello, "
+        next WorldState
+      _ -> none
+    process $ \ju -> case ju of
+      WorldState -> do
+        commitIO $ putStrLn "world"
+        fin
+      _ -> none
+  scheduleJob jq HelloState
+  let exec = executeJob jq (initJobEnv "hoge" "hoge" [])
+  exec
+  exec
+  exec
+  exec
+  closeSession session
   return ()
   

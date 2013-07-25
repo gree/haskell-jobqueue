@@ -13,6 +13,7 @@ module Network.JobQueue (
   , Desc
   , createJob
   , openSession
+  , closeSession
   , openJobQueue
   , executeJob
   , scheduleJob

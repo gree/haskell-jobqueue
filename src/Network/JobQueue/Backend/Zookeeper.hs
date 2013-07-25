@@ -7,6 +7,7 @@ import Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
 
 openZookeeperBackend :: String -> IO Backend
 openZookeeperBackend coord = do
+  Z.setDebugLevel Z.LogDisabled
   zh <- Z.init coord Nothing 100000
   return $ Backend {
       openQueue = \queueName -> return $ initZQueue zh queueName Z.OpenAclUnsafe
