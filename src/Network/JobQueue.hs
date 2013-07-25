@@ -33,6 +33,7 @@ module Network.JobQueue (
   , commitIO
   , module Network.JobQueue.JobEnv
   , module Network.JobQueue.JobResult
+  , buildJobQueue
   , runJobQueue
   , onJobQueue
   ) where
@@ -50,17 +51,20 @@ import Network.JobQueue.JobEnv
 import Network.JobQueue.Job
 import Network.JobQueue.JobResult
 
-runJobQueue :: (Unit a) => String -> String -> JobM a () -> IO ()
-runJobQueue loc name jobm = do
+buildJobQueue :: (Unit a) => String -> String -> JobM a () -> ((JobQueue a -> IO ()) -> IO ())
+buildJobQueue loc name jobm = \action -> do
   bracket (openSession loc) (closeSession) $ \session -> do
     jq <- openJobQueue session name def jobm
-    loop' jq `catch` (\(e :: SomeException) -> print e)
+    action jq
     closeJobQueue jq
+
+runJobQueue :: (Unit a) => String -> String -> JobM a () -> IO ()
+runJobQueue loc name jobm = buildJobQueue loc name jobm loop
   where
-    loop' jq = do
+    loop jq = do
       executeJob jq (initJobEnv loc name [])
       count <- countJobQueue jq
-      when (count > 0) $ loop' jq
+      when (count > 0) $ loop jq
 
 onJobQueue :: (Unit a) => String -> String -> (JobQueue a -> IO ()) -> IO ()
 onJobQueue loc name act = do
