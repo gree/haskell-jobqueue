@@ -9,5 +9,7 @@ class (Show a) => Desc a where
 
 class (Read a, Show a, Desc a) => Unit a where
   getPriority :: a -> Int
+  getPriority _ju = 1
   getRecovery :: a -> a
+  getRecovery ju = ju
 

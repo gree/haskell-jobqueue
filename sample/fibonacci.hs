@@ -6,7 +6,10 @@ import Control.Exception
 import System.Environment
 import Network.JobQueue
 
-data JobUnit = InitialStep | ComputationStep Integer Integer [Integer] deriving (Show, Read, Eq, Ord)
+data JobUnit =
+    InitialStep
+  | ComputationStep Integer Integer [Integer]
+  deriving (Show, Read, Eq, Ord)
 
 instance Unit JobUnit where
   getPriority _ju = 1
