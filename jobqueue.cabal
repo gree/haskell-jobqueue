@@ -9,7 +9,7 @@ Copyright:      GREE, Inc.
 Build-Type:     Simple
 Category:       Network, Client
 Cabal-Version:  >=1.8
-Desceiption:
+Description:
   Haskell JobQueue is a library used for building a job scheduler with priority queues.
   The state of jobs is stored in a backend database such as Apache Zookeeper or other 
   highly reliable mesage queue systems.
