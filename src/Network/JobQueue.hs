@@ -1,8 +1,24 @@
 
+{- |
+Module: Network.JobQueue
+Maintainer: Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+
+Haskell JobQueue is a library used for building a job scheduler with priority queues.
+The state of jobs is stored in a backend database such as Apache Zookeeper or other 
+highly reliable mesage queue systems.
+
+* Job
+Jobs are described as state machines and each state only do one thing especially for
+modifying operations. This prevents the job from resulting in a failure state which
+is not able to be handled by the state machine.
+-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Network.JobQueue (
-    JobQueue
+    buildJobQueue
+  , runJobQueue
+  , JobQueue
   , Job(..)
   , Unit(..)
   , ActionM
@@ -26,16 +42,12 @@ module Network.JobQueue (
   , fork
   , forkInTime
   , forkOnTime
+  , abort
   , getEnv
   , param
-  , abort
   , logMsg
-  , result
   , commitIO
-  , module Network.JobQueue.JobEnv
-  , module Network.JobQueue.JobResult
-  , buildJobQueue
-  , runJobQueue
+  , initJobEnv
   ) where
 
 import Prelude hiding (log)
@@ -49,20 +61,55 @@ import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.JobEnv
 import Network.JobQueue.Job
-import Network.JobQueue.JobResult
 
-buildJobQueue :: (Unit a) => String -> String -> JobM a () -> ((JobQueue a -> IO ()) -> IO ())
+{- | Build a function that takes an action function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
+
+The following code executes jobs as long as the queue is not empty.
+
+>  main' loc name = do
+>    let withJobQueue = buildJobQueue loc name $ do
+>          process $ \WorldStep -> commitIO (putStrLn "world") >> fin
+>          process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+>    withJobQueue $ loop (initJobEnv loc name [])
+>    where
+>      loop env jq = do
+>        executeJob jq env
+>        count <- countJobQueue jq
+>        when (count > 0) $ loop env jq
+
+The following code registers a job with initial state.
+
+>  main' loc name = do
+>    let withJobQueue = buildJobQueue loc name $ do
+>          process $ \WorldStep -> commitIO (putStrLn "world") >> fin
+>          process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+>    withJobQueue $ \jq -> scheduleJob jq HelloStep
+
+-}
+buildJobQueue :: (Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
+                 -> String          -- ^ queue name (ex. \"/jobqueue\")
+                 -> JobM a ()       -- ^ job construction function
+                 -> ((JobQueue a -> IO ()) -> IO ())
 buildJobQueue loc name jobm = \action -> do
   bracket (openSession loc) (closeSession) $ \session -> do
     jq <- openJobQueue session name def jobm
     action jq
     closeJobQueue jq
 
-runJobQueue :: (Unit a) => String -> String -> JobM a () -> IO ()
+{- | Run a job queue while there is at least one job in the queue.
+-}
+runJobQueue :: (Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
+               -> String          -- ^ queue name (ex. \"/jobqueue\")
+               -> JobM a ()       -- ^ job construction function
+               -> IO ()
 runJobQueue loc name jobm = buildJobQueue loc name jobm loop
   where
     loop jq = do
       executeJob jq (initJobEnv loc name [])
       count <- countJobQueue jq
       when (count > 0) $ loop jq
+
+----------------------------------------------------------------------
+-- Docs
+----------------------------------------------------------------------
 

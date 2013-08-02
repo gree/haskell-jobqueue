@@ -1,3 +1,7 @@
+{- |
+Module: Network.JobQueue.Job
+Maintainer: Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+-}
 
 module Network.JobQueue.Job (
     Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority)
@@ -23,6 +27,24 @@ import Network.JobQueue.Action
 data JobState = Initialized | Runnable | Running | Aborted | Finished
   deriving (Show, Read, Eq)
 
+{- | Job control block
+Job consists of /State/, /Unit/, /CTime/, /OnTime/, /Id/, /Group/, and /Priority/.
+
+- State - takes one of 5 states (initialized, runnable, running, aborted and finished)
+
+- Unit - an instance of Unit class, which is specified by type parameter of Job data type
+
+- CTime - creation time
+
+- OnTime - the time at which this job starts
+
+- Id - Identifier of this job
+
+- Group - Group ID of this job
+
+- Priority - the priority of this job
+
+-}
 data Job a =
     Job {
       jobState    :: JobState

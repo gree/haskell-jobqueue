@@ -3,13 +3,17 @@ Version:        0.0.3
 Description:    A job queue library using Zookeeper
 License:        TBD
 License-file:   LICENSE
-Author:         Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
-Maintainer:     Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+Author:         Kiyoshi Ikehara
+Maintainer:     kiyoshi.ikehara at gree.net
 Copyright:      GREE, Inc.
 Build-Type:     Simple
-Category:       Network
+Category:       Network, Client
 Cabal-Version:  >=1.8
-
+Desceiption:
+  Haskell JobQueue is a library used for building a job scheduler with priority queues.
+  The state of jobs is stored in a backend database such as Apache Zookeeper or other 
+  highly reliable mesage queue systems.
+  
 Library
   Ghc-Options:     -O2 -Wall
   Build-Depends:   base                     >= 4 && < 5
