@@ -6,6 +6,7 @@ module Network.JobQueue.JobQueue (
   , FailureHandleFn
   , AfterExecuteHandleFn
   , Session
+  , Settings (..)
   , openSession
   , closeSession
   , openJobQueue
@@ -41,11 +42,11 @@ data ErrorAction = Delete | Skip
 type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
 type AfterExecuteHandleFn a = Job a -> IO ()
 
-data Settings a = Settings {
-    _failureHandleFn :: FailureHandleFn a
-  , _afterExecuteFn :: AfterExecuteHandleFn a
+data (Unit a) => Settings a = Settings {
+    failureHandleFn :: FailureHandleFn a
+  , afterExecuteFn :: AfterExecuteHandleFn a
   }
-
+                              
 instance (Unit a) => Default (Settings a) where
   def = Settings handleFailure handleAfterExecute
     where

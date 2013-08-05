@@ -18,23 +18,15 @@ is not able to be handled by the state machine.
 module Network.JobQueue (
     buildJobQueue
   , runJobQueue
-  , JobQueue
   , Job(..)
+  , JobState(..)
   , Unit(..)
   , ActionM
   , JobM
-  , FailureHandleFn
-  , AfterExecuteHandleFn
-  , openSession
-  , closeSession
-  , openJobQueue
-  , closeJobQueue
-  , countJobQueue
+  , JobActionState
+  , Alert(..)
   , process
   , createJob
-  , executeJob
-  , scheduleJob
-  , deleteJob
   , fin
   , none
   , next
@@ -47,6 +39,7 @@ module Network.JobQueue (
   , logMsg
   , commitIO
   , module Network.JobQueue.Class
+  , module Network.JobQueue.JobQueue
   ) where
 
 import Prelude hiding (log)
