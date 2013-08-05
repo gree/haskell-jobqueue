@@ -58,10 +58,10 @@ data Job a =
 
 --------------------------------
 
-process :: (Unit a) => (a -> ActionM a ()) -> JobM a ()
+process :: (Env e, Unit a) => (a -> ActionM e a ()) -> JobM e a ()
 process action = modify $ addAction $ eval action
 
-eval :: (Unit a) => (a -> ActionM a ()) -> ActionFn a
+eval :: (Env e, Unit a) => (a -> ActionM e a ()) -> ActionFn e a
 eval action env ju = runAction env ju (action ju)
 
 --------------------------------

@@ -33,13 +33,13 @@ import Data.Maybe
 import Data.Time.Clock
 import Data.Default (Default, def)
 
+import Network.JobQueue.Class
 import Network.JobQueue.Types
-import Network.JobQueue.JobEnv
 
-buildActionState :: (Unit a) => JobM a () -> IO (JobActionState a)
+buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
 buildActionState jobs = execStateT (runS jobs) (JobActionState [])
 
-runActionState :: (Unit a) => JobActionState a -> JobEnv -> a -> IO (Maybe (JobResult a))
+runActionState :: (Env e, Unit a) => JobActionState e a -> e -> a -> IO (Maybe (JobResult a))
 runActionState (JobActionState { jobActions = actions } ) env ju = do
   mjr <- runActionState' actions
   return (mjr)
@@ -56,7 +56,7 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
     handleFail (PatternMatchFail msg) = do
       return (Nothing)
 
-runAction :: (Unit a) => JobEnv -> a -> ActionM a () -> IO (Maybe (JobResult a))
+runAction :: (Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
 runAction env ju action = do
     (e,r) <- flip runStateT Nothing
            $ flip runReaderT (ActionEnv env ju)
@@ -65,15 +65,15 @@ runAction env ju action = do
            $ action `catchError` defaultHandler
     return $ either (const Nothing) (const $ r) e
 
-defaultHandler :: (Unit a) => ActionError -> ActionM a ()
+defaultHandler :: (Env e, Unit a) => ActionError -> ActionM e a ()
 defaultHandler (ActionError al msg) = result (Just $ Left $ Failure al msg)
 
 --------------------------------
 
-getEnv :: (Unit a) => ActionM a (JobEnv)
+getEnv :: (Env e, Unit a) => ActionM e a (e)
 getEnv = getJobEnv <$> ask
 
-param :: (Unit a, Read b) => (String, String) -> ActionM a (b)
+param :: (Env e, Unit a, Read b) => (String, String) -> ActionM e a (b)
 param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
@@ -84,45 +84,45 @@ param (key, defaultValue) = do
   where
     maybeRead = fmap fst . listToMaybe . reads
       
-myname :: (Unit a) => ActionM a String
-myname = getEnv >>= return .envName
+myname :: (Env e, Unit a) => ActionM e a (String)
+myname = getEnv >>= return . envName
 
 ----------------
 
-commitIO :: (Unit a) => IO (b) -> ActionM a b
+commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
 commitIO action = liftIO action
 
 ----------------
 
-result :: (Unit a) => Maybe (JobResult a) -> ActionM a ()
+result :: (Env e, Unit a) => Maybe (JobResult a) -> ActionM e a ()
 result = modify . setResult
 
-fork :: (Unit a) => a -> ActionM a ()
+fork :: (Env e, Unit a) => a -> ActionM e a ()
 fork ju = forkWith ju Nothing
 
-forkOnTime :: (Unit a) => UTCTime -> a -> ActionM a ()
+forkOnTime :: (Env e, Unit a) => UTCTime -> a -> ActionM e a ()
 forkOnTime t ju = forkWith ju (Just t)
 
-forkInTime :: (Unit a) => NominalDiffTime -> a -> ActionM a ()
+forkInTime :: (Env e, Unit a) => NominalDiffTime -> a -> ActionM e a ()
 forkInTime tDiff ju = do
   currentTime <- liftIO $ getCurrentTime
   forkWith ju (Just (addUTCTime tDiff currentTime))
 
-next :: (Unit a) => a -> ActionM a ()
+next :: (Env e, Unit a) => a -> ActionM e a ()
 next ju = modify $ \s -> Just $ setNextJob ju $ fromMaybe def s
 
-fin :: (Unit a) => ActionM a ()
+fin :: (Env e, Unit a) => ActionM e a ()
 fin = result def
 
-none :: (Unit a) => ActionM a ()
+none :: (Env e, Unit a) => ActionM e a ()
 none = result Nothing
 
-abort :: (Unit a) => Alert -> String -> ActionM a b
+abort :: (Env e, Unit a) => Alert -> String -> ActionM e a b
 abort level msg = do
   result $ Just $ Left $ Failure level msg
   throwError $ ActionError level msg
 
-logMsg :: (Unit a) => Alert -> String -> ActionM a ()
+logMsg :: (Env e, Unit a) => Alert -> String -> ActionM e a ()
 logMsg level msg = liftIO $ case level of
   Critical -> criticalM "control" msg
   Error -> errorM "control" msg
@@ -133,6 +133,6 @@ logMsg level msg = liftIO $ case level of
 
 ---------------------------------------------------------------- PRIVATE
 
-forkWith :: (Unit a) => a -> Maybe UTCTime -> ActionM a ()
+forkWith :: (Env e, Unit a) => a -> Maybe UTCTime -> ActionM e a ()
 forkWith ju mt = modify $ \s -> Just $ addForkJob (ju, mt) $ fromMaybe def s
 

@@ -21,6 +21,7 @@ module Network.JobQueue (
   , JobQueue
   , Job(..)
   , Unit(..)
+  , Env(..)
   , ActionM
   , JobM
   , FailureHandleFn
@@ -47,7 +48,6 @@ module Network.JobQueue (
   , param
   , logMsg
   , commitIO
-  , initJobEnv
   ) where
 
 import Prelude hiding (log)
@@ -59,7 +59,6 @@ import Network.JobQueue.Types
 import Network.JobQueue.Class
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
-import Network.JobQueue.JobEnv
 import Network.JobQueue.Job
 
 {- | Build a function that takes an action function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
@@ -86,10 +85,10 @@ The following code registers a job with initial state.
 >    withJobQueue $ \jq -> scheduleJob jq HelloStep
 
 -}
-buildJobQueue :: (Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
+buildJobQueue :: (Env e, Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
                  -> String          -- ^ queue name (ex. \"/jobqueue\")
-                 -> JobM a ()       -- ^ job construction function
-                 -> ((JobQueue a -> IO ()) -> IO ())
+                 -> JobM e a ()     -- ^ job construction function
+                 -> ((JobQueue e a -> IO ()) -> IO ())
 buildJobQueue loc name jobm = \action -> do
   bracket (openSession loc) (closeSession) $ \session -> do
     jq <- openJobQueue session name def jobm
@@ -98,14 +97,16 @@ buildJobQueue loc name jobm = \action -> do
 
 {- | Run a job queue while there is at least one job in the queue.
 -}
-runJobQueue :: (Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
+runJobQueue :: (Env e, Unit a)
+               => e
+               -> String          -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
                -> String          -- ^ queue name (ex. \"/jobqueue\")
-               -> JobM a ()       -- ^ job construction function
+               -> JobM e a ()     -- ^ job construction function
                -> IO ()
-runJobQueue loc name jobm = buildJobQueue loc name jobm loop
+runJobQueue env loc name jobm = buildJobQueue loc name jobm loop
   where
     loop jq = do
-      executeJob jq (initJobEnv loc name [])
+      executeJob jq env
       count <- countJobQueue jq
       when (count > 0) $ loop jq
 

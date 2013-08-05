@@ -1,10 +1,18 @@
 
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Default
-import Control.Exception
 import System.Environment
 import Network.JobQueue
+
+data JobEnv = JobEnv {
+    jeLocator    :: String
+  , jeName       :: String
+  , jeParameters :: [(String, String)]
+  } deriving (Eq, Show)
+
+instance Env JobEnv where
+  envParameters = jeParameters
+  envName = jeName
 
 data JobUnit =
     InitialStep
@@ -17,6 +25,7 @@ instance Unit JobUnit where
 
 instance Desc JobUnit where
 
+main :: IO ()
 main = do
   args <- getArgs
   case args of
@@ -28,7 +37,7 @@ main = do
                 then liftIO (print (reverse r)) >> fin
                 else next $ ComputationStep b (a+b) (a:r)
       case args' of
-        ("run":[]) -> withJobQueue $ loop (initJobEnv loc name [])
+        ("run":[]) -> withJobQueue $ loop (JobEnv loc name [])
         ("init":[]) -> withJobQueue $ \jq -> scheduleJob jq InitialStep
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
     _ -> return ()

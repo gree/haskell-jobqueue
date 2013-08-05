@@ -1,6 +1,12 @@
 
 module Network.JobQueue.Class where
 
+class Env a where
+  envParameters :: a -> [(String, String)]
+  envParameters _env = []
+  envName :: a -> String
+  envName _env = ""
+
 class (Show a) => Desc a where
   desc :: a -> String
   desc x = show x

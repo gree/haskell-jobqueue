@@ -24,13 +24,14 @@ module Network.JobQueue.Types (
 
 import Data.Time.Clock
 
+{-# LANGUAGE ExistentialQuantification #-}
+
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Default (Default, def)
 
 import Network.JobQueue.Class
-import Network.JobQueue.JobEnv
 
 --------------------------------
 
@@ -58,20 +59,20 @@ addForkJob (_, _) jr@(Left _) = jr
 
 --------------------------------
 
-type ActionFn a = JobEnv -> a -> IO (Maybe (JobResult a))
+type ActionFn e a = e -> a -> IO (Maybe (JobResult a))
 
-data JobActionState a = JobActionState { jobActions :: [ActionFn a] }
+data JobActionState e a = JobActionState { jobActions :: [ActionFn e a] }
 
-addAction :: (Unit a) => ActionFn a -> JobActionState a -> JobActionState a
+addAction :: (Env e, Unit a) => ActionFn e a -> JobActionState e a -> JobActionState e a
 addAction action s@(JobActionState { jobActions = actions }) = s { jobActions = action:actions }
 
-instance Default (JobActionState a) where
+instance Default (JobActionState e a) where
   def = JobActionState []
 
 --------------------------------
 
-newtype (Unit a) => JobM a b = JobM { runS :: StateT (JobActionState a) IO b }
-  deriving (Monad, MonadIO, Functor, MonadState (JobActionState a))
+newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
+  deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
 
 data ActionError = ActionError Alert String
   deriving (Show)
@@ -79,16 +80,16 @@ data ActionError = ActionError Alert String
 instance Error ActionError where
   strMsg = ActionError Warning
 
-data ActionEnv a = ActionEnv {
-    getJobEnv :: JobEnv
+data ActionEnv e a = ActionEnv {
+    getJobEnv :: e
   , getJobUnit :: a
   }
 
 type JobResultState a = Maybe (JobResult a)
 
-newtype ActionM a b = ActionM { runAM :: ErrorT ActionError (ReaderT (ActionEnv a) (StateT (JobResultState a) IO)) b }
+newtype ActionM e a b = ActionM { runAM :: ErrorT ActionError (ReaderT (ActionEnv e a) (StateT (JobResultState a) IO)) b }
   deriving ( Monad, MonadIO, Functor
-           , MonadReader (ActionEnv a), MonadState (JobResultState a), MonadError ActionError)
+           , MonadReader (ActionEnv e a), MonadState (JobResultState a), MonadError ActionError)
 
 setResult :: (Unit a) => Maybe (JobResult a) -> JobResultState a -> JobResultState a
 setResult result _ = result
