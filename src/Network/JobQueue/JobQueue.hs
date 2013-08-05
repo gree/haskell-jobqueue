@@ -65,6 +65,8 @@ instance (Unit a) => Default (Settings a) where
 
 data JobQueue a = forall q . (BackendQueue q) => JobQueue {
     jqBackendQueue :: q
+  , jqLocator :: String
+  , jqName :: String
   , jqActionState :: JobActionState a
   , jqFailureHandleFn :: FailureHandleFn a
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
@@ -80,7 +82,7 @@ closeSession (Session _locator backend@(Backend { bClose = c })) = c backend
 
 openJobQueue :: (Unit a) => Session -> String -> Settings a -> JobM a () -> IO (JobQueue a)
 openJobQueue (Session _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
-  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
+  JobQueue <$> oq name <*> pure _locator <*> pure name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
 
 closeJobQueue :: (Unit a) => JobQueue a -> IO ()
 closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
@@ -89,7 +91,7 @@ countJobQueue :: JobQueue a -> IO (Int)
 countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
 executeJob :: (Unit a) => JobQueue a -> JobEnv -> IO ()
-executeJob jobqueue env = do
+executeJob jobqueue@(JobQueue { jqLocator = locator, jqName = queueName }) env = do
   obj <- peekJob jobqueue
   case obj of
     Nothing -> return ()
