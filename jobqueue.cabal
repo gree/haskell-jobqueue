@@ -39,7 +39,6 @@ Library
                  , Network.JobQueue.Action
                  , Network.JobQueue.Job
                  , Network.JobQueue.JobQueue
-                 , Network.JobQueue.JobEnv
                  , Network.JobQueue.JobResult
   Other-modules:   Network.JobQueue.Backend
                  , Network.JobQueue.Backend.Class
