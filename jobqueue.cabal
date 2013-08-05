@@ -40,11 +40,11 @@ Library
                  , Network.JobQueue.Job
                  , Network.JobQueue.JobQueue
                  , Network.JobQueue.JobResult
-  Other-modules:   Network.JobQueue.Backend
+                 , Network.JobQueue.Backend
                  , Network.JobQueue.Backend.Class
                  , Network.JobQueue.Backend.Types
                  , Network.JobQueue.Backend.Zookeeper
-                 , Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
+  Other-modules:   Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 
 Executable jobqueue-sample-hello

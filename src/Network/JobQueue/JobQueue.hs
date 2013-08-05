@@ -8,6 +8,7 @@ module Network.JobQueue.JobQueue (
   , Session
   , Settings (..)
   , openSession
+  , newSession
   , closeSession
   , openJobQueue
   , closeJobQueue
@@ -68,16 +69,19 @@ data JobQueue e a = forall q. (BackendQueue q) => JobQueue {
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
   }
 
-data Session = Session String Backend
+data Session = Session Bool String Backend
 
 openSession :: String -> IO (Session)
-openSession locator = Session locator <$> openBackend locator
+openSession locator = Session True locator <$> openBackend locator
+
+newSession :: String -> Backend -> Session
+newSession dummyLocator backend = Session False dummyLocator backend
 
 closeSession :: Session -> IO ()
-closeSession (Session _locator backend@(Backend { bClose = c })) = c backend
+closeSession (Session isOwner _locator backend@(Backend { bClose = c })) = when isOwner $ c backend
 
 openJobQueue :: (Env e, Unit a) => Session -> String -> Settings a -> JobM e a () -> IO (JobQueue e a)
-openJobQueue (Session _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
+openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
   JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
 
 closeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO ()
