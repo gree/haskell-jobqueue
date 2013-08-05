@@ -21,12 +21,10 @@ module Network.JobQueue (
   , JobQueue
   , Job(..)
   , Unit(..)
-  , Env(..)
   , ActionM
   , JobM
   , FailureHandleFn
   , AfterExecuteHandleFn
-  , Desc
   , openSession
   , closeSession
   , openJobQueue
@@ -48,6 +46,7 @@ module Network.JobQueue (
   , param
   , logMsg
   , commitIO
+  , module Network.JobQueue.Class
   ) where
 
 import Prelude hiding (log)

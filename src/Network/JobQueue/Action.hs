@@ -5,7 +5,6 @@ module Network.JobQueue.Action (
   , runActionState
   , runAction
   , getEnv
-  , myname
   , param
   , result
   , next
@@ -53,7 +52,7 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
           Just _ -> return (r)
 
     handleFail :: PatternMatchFail -> IO (Maybe (JobResult a))
-    handleFail (PatternMatchFail msg) = do
+    handleFail (PatternMatchFail _msg) = do
       return (Nothing)
 
 runAction :: (Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
@@ -73,7 +72,7 @@ defaultHandler (ActionError al msg) = result (Just $ Left $ Failure al msg)
 getEnv :: (Env e, Unit a) => ActionM e a (e)
 getEnv = getJobEnv <$> ask
 
-param :: (Env e, Unit a, Read b) => (String, String) -> ActionM e a (b)
+param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a (b)
 param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
@@ -84,9 +83,6 @@ param (key, defaultValue) = do
   where
     maybeRead = fmap fst . listToMaybe . reads
       
-myname :: (Env e, Unit a) => ActionM e a (String)
-myname = getEnv >>= return . envName
-
 ----------------
 
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)

@@ -1,17 +1,13 @@
 
 import Control.Monad
-import System.Environment
+import System.Environment hiding (getEnv)
 import Network.JobQueue
 
 data JobEnv = JobEnv {
-    jeLocator    :: String
-  , jeName       :: String
-  , jeParameters :: [(String, String)]
+    jeHello      :: String
   } deriving (Eq, Show)
 
 instance Env JobEnv where
-  envParameters = jeParameters
-  envName = jeName
 
 data JobUnit = HelloStep | WorldStep deriving (Show, Read, Eq, Ord)
 
@@ -28,9 +24,12 @@ main = do
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ do
             process $ \WorldStep -> commitIO (putStrLn "world") >> fin
-            process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+            process $ \HelloStep -> do
+              env <- getEnv
+              commitIO (putStr $ (jeHello env) ++ ", ")
+              next WorldStep
       case args' of
-        ("run":[]) -> withJobQueue $ loop (JobEnv loc name [])
+        ("run":[]) -> withJobQueue $ loop (JobEnv "hello")
         ("init":[]) -> withJobQueue $ \jq -> scheduleJob jq HelloStep
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
     _ -> return ()

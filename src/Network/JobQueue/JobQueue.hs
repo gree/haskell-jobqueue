@@ -50,22 +50,18 @@ instance (Unit a) => Default (Settings a) where
   def = Settings handleFailure handleAfterExecute
     where
       handleFailure :: (Unit a) => FailureHandleFn a
-      handleFailure al subject msg mjob = do
+      handleFailure _al _subject msg mjob = do
         hPutStrLn stderr msg
         hFlush stderr
         case mjob of
-          Just job -> do
-            nextJob <- createJob Runnable (getRecovery (jobUnit job))
-            return (Just nextJob)
+          Just job -> Just <$> createJob Runnable (getRecovery (jobUnit job))
           Nothing -> return (Nothing)
 
       handleAfterExecute :: (Unit a) => Job a -> IO ()
-      handleAfterExecute job = return ()
+      handleAfterExecute _job = return ()
 
 data JobQueue e a = forall q. (BackendQueue q) => JobQueue {
     jqBackendQueue :: q
-  , jqLocator :: String
-  , jqName :: String
   , jqActionState :: JobActionState e a
   , jqFailureHandleFn :: FailureHandleFn a
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
@@ -81,7 +77,7 @@ closeSession (Session _locator backend@(Backend { bClose = c })) = c backend
 
 openJobQueue :: (Env e, Unit a) => Session -> String -> Settings a -> JobM e a () -> IO (JobQueue e a)
 openJobQueue (Session _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
-  JobQueue <$> oq name <*> pure _locator <*> pure name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
+  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
 
 closeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO ()
 closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
@@ -90,7 +86,7 @@ countJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Int)
 countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
 executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
-executeJob jobqueue@(JobQueue { jqLocator = locator, jqName = queueName }) env = do
+executeJob jobqueue env = do
   obj <- peekJob jobqueue
   case obj of
     Nothing -> return ()
