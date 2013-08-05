@@ -1,5 +1,5 @@
 Name:           jobqueue
-Version:        0.0.4
+Version:        0.0.5
 Description:    A job queue library using Zookeeper
 License:        TBD
 License-file:   LICENSE
