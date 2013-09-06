@@ -58,6 +58,8 @@ data Job a =
 
 --------------------------------
 
+{- | Declare a function which accepts a unit and execute the action of it if possible.
+-}
 process :: (Env e, Unit a) => (a -> ActionM e a ()) -> JobM e a ()
 process action = modify $ addAction $ eval action
 

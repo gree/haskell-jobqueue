@@ -20,7 +20,6 @@ The code shown below describes how to define a Unit.
 >  data JobUnit = HelloStep | WorldStep deriving (Show, Read)
 >  
 >  instance Unit JobUnit where
->  instance Desc JobUnit where
 
 In this case, you define JobUnit type with 2 states, HelloStep and WorldStep.
 This is the entire state machine of your job queue system.
