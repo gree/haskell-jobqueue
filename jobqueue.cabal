@@ -1,8 +1,8 @@
 Name:           jobqueue
 Version:        0.0.5
-Description:    A job queue library using Zookeeper
-License:        TBD
-License-file:   LICENSE
+Synopsis:       A job queue library using Zookeeper
+License:        OtherLicense
+License-File:   LICENSE
 Author:         Kiyoshi Ikehara
 Maintainer:     kiyoshi.ikehara at gree.net
 Copyright:      GREE, Inc.
@@ -12,10 +12,19 @@ Cabal-Version:  >=1.8
 Description:
   Haskell JobQueue is a library used for building a job scheduler with priority queues.
   The state of jobs is stored in a backend database such as Apache Zookeeper or other 
-  highly reliable mesage queue systems.
+  highly reliable message queue systems.
+
+Source-Repository head
+  type:     git
+  location: https://github.com/gree/haskell-jobqueue.git
+
+Source-Repository this
+  type:     git
+  location: https://github.com/gree/haskell-jobqueue.git
+  tag:      0.0.5
   
 Library
-  Ghc-Options:     -O2 -Wall
+  Ghc-Options:     -Wall
   Build-Depends:   base                     >= 4 && < 5
                  , mtl
                  , network                  >= 2.3.2
@@ -48,7 +57,7 @@ Library
   Extensions:      DeriveDataTypeable
 
 Executable jobqueue-sample-hello
-  Ghc-Options:     -threaded -O2 -Wall -rtsopts
+  Ghc-Options:     -threaded -Wall -rtsopts
   Build-Depends:   base >=4 && <5
                  , jobqueue
                  , bytestring
@@ -59,7 +68,7 @@ Executable jobqueue-sample-hello
   Extensions:      DeriveDataTypeable
 
 Executable jobqueue-sample-fibonacci
-  Ghc-Options:     -threaded -O2 -Wall -rtsopts
+  Ghc-Options:     -threaded -Wall -rtsopts
   Build-Depends:   base >=4 && <5
                  , jobqueue
                  , network

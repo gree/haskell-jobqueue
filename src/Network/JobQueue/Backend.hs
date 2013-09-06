@@ -15,10 +15,17 @@ import Control.Applicative
 
 data Locator = Zookeeper String
 
-openBackend :: String -> IO Backend
+
+{- | Open a backend database.
+-}
+openBackend :: String        -- ^ locator (eg. \"zookeeper://localhost:2181/myapp\")
+               -> IO Backend -- ^ backend
 openBackend locator = case parseLocator locator of
   Just (Zookeeper connString) -> openZookeeperBackend connString
   _ -> throwIO $ userError "invalid locator"
+
+
+---------------------------------------------------------------- PRIVATE
 
 parseLocator :: String -> Maybe Locator
 parseLocator v = case parse locatorParser $ BS.pack v of
