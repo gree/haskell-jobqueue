@@ -1,6 +1,6 @@
 Name:           jobqueue
 Version:        0.0.5
-Synopsis:       A job queue library using Zookeeper
+Synopsis:       A job queue library
 License:        OtherLicense
 License-File:   LICENSE
 Author:         Kiyoshi Ikehara
@@ -41,6 +41,8 @@ Library
                  , zookeeper
                  , attoparsec
                  , data-default
+                 , HDBC
+                 , HDBC-sqlite3
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -53,6 +55,7 @@ Library
                  , Network.JobQueue.Backend.Class
                  , Network.JobQueue.Backend.Types
                  , Network.JobQueue.Backend.Zookeeper
+                 , Network.JobQueue.Backend.Sqlite3
   Other-modules:   Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 
@@ -79,3 +82,20 @@ Executable jobqueue-sample-fibonacci
   Hs-source-dirs:  sample
   Main-is:         fibonacci.hs
   Extensions:      DeriveDataTypeable
+
+Test-Suite test-jobqueue
+  Ghc-Options:     -threaded -O2 -Wall
+  Build-depends:   base
+                 , bytestring
+                 , network >= 2.3.2
+                 , split
+                 , QuickCheck == 2.5.1.1
+                 , HUnit
+                 , test-framework
+                 , test-framework-th
+                 , test-framework-hunit
+                 , test-framework-quickcheck2
+                 , jobqueue
+  Type:            exitcode-stdio-1.0
+  Hs-source-dirs:  test
+  Main-is:         test-jobqueue.hs
