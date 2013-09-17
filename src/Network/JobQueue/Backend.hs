@@ -9,19 +9,21 @@ import qualified Data.ByteString.Char8 as BS
 import Network.JobQueue.Backend.Class ()
 import Network.JobQueue.Backend.Types
 import Network.JobQueue.Backend.Zookeeper
+import Network.JobQueue.Backend.Sqlite3
 
 import Data.Attoparsec.ByteString
 import Control.Applicative
 
-data Locator = Zookeeper String
+data Locator = Zookeeper String | Sqlite3 String
 
 
 {- | Open a backend database.
 -}
-openBackend :: String        -- ^ locator (eg. \"zookeeper://localhost:2181/myapp\")
+openBackend :: String        -- ^ locator (eg. \"zookeeper://localhost:2181/myapp\", \"sqlite3://myapp.sqlite3\")
                -> IO Backend -- ^ backend
 openBackend locator = case parseLocator locator of
   Just (Zookeeper connString) -> openZookeeperBackend connString
+  Just (Sqlite3 localPath) -> openSqlite3Backend localPath
   _ -> throwIO $ userError "invalid locator"
 
 
@@ -40,5 +42,6 @@ parseLocator v = case parse locatorParser $ BS.pack v of
       scheme <- takeWhile (/= 58) <* string "://"
       case scheme of
         "zookeeper" -> Zookeeper <$> fmap BS.unpack (takeWhile1 (\_ -> True))
+        "sqlite3" -> Sqlite3 <$> fmap BS.unpack (takeWhile1 (\_ -> True))
         _ -> fail "unknown scheme"
   
