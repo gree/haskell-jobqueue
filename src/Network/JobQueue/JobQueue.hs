@@ -43,9 +43,11 @@ data ErrorAction = Delete | Skip
 type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
 type AfterExecuteHandleFn a = Job a -> IO ()
 
+{- | Job queue settings
+-}
 data (Unit a) => Settings a = Settings {
-    failureHandleFn :: FailureHandleFn a
-  , afterExecuteFn :: AfterExecuteHandleFn a
+    failureHandleFn :: FailureHandleFn a     -- ^ a function called when an action fails
+  , afterExecuteFn :: AfterExecuteHandleFn a -- ^ a function called after an action is executed (for debugging)
   }
                               
 instance (Unit a) => Default (Settings a) where
@@ -69,27 +71,53 @@ data JobQueue e a = forall q. (BackendQueue q) => JobQueue {
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
   }
 
+{- | A session handler
+
+     A session usually represents a database session to access job queues stored in the backend
+     database.
+-}
 data Session = Session Bool String Backend
 
-openSession :: String -> IO (Session)
+{- | Open a queue session with a resource locator
+-}
+openSession :: String          -- ^ a resource locator
+               -> IO (Session) -- ^ a session handler
 openSession locator = Session True locator <$> openBackend locator
 
-newSession :: String -> Backend -> Session
+{- | Create a queue session with a backend handler
+-}
+newSession :: String                -- ^ a resource locator (dummy)
+              -> Backend -> Session -- ^ a session handler
 newSession dummyLocator backend = Session False dummyLocator backend
 
+{- | Close a queue session if needed
+-}
 closeSession :: Session -> IO ()
 closeSession (Session isOwner _locator backend@(Backend { bClose = c })) = when isOwner $ c backend
 
-openJobQueue :: (Env e, Unit a) => Session -> String -> Settings a -> JobM e a () -> IO (JobQueue e a)
+{- | Open a job queue with a session.
+-}
+openJobQueue :: (Env e, Unit a)
+                => Session     -- ^ a session handler
+                -> String      -- ^ a queue name
+                -> Settings a  -- ^ queue settings
+                -> JobM e a () -- ^ a state machine definition
+                -> IO (JobQueue e a)
 openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
   JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
 
+{- | Close a job queue.
+-}
 closeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO ()
 closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
 
+{- | Count the number of jobs queued in a job queue.
+-}
 countJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Int)
 countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
+{- | Execute an action of the head job in a job queue.
+-}
 executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
 executeJob jobqueue env = do
   obj <- peekJob jobqueue
@@ -119,12 +147,22 @@ executeJob jobqueue env = do
     maybeRead = fmap fst . listToMaybe . reads
     idSuffixLen = 10
 
-scheduleJob :: (Unit a) => JobQueue e a -> a -> IO ()
+{- | Schedule a job.
+-}
+scheduleJob :: (Unit a)
+               => JobQueue e a -- ^ a job queue
+               -> a            -- ^ a unit
+               -> IO ()
 scheduleJob JobQueue { jqBackendQueue = bq } ju = do
   job <- createJob Initialized ju
   void $ writeQueue' bq (pack job) (getPriority ju)
 
-deleteJob :: (Unit a) => JobQueue e a -> String -> IO (Bool)
+{- | Delete a job from a job queue.
+-}
+deleteJob :: (Unit a)
+             => JobQueue e a -- ^ a job queue
+             -> String       -- ^ a job identifier
+             -> IO (Bool)
 deleteJob JobQueue { jqBackendQueue = bq } nodeName = deleteQueue bq nodeName
 
 ---------------------------------------------------------------- PRIVATE

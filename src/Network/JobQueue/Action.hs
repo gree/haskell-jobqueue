@@ -69,9 +69,14 @@ defaultHandler (ActionError al msg) = result (Just $ Left $ Failure al msg)
 
 --------------------------------
 
+{- | Get environment in action.
+-}
 getEnv :: (Env e, Unit a) => ActionM e a (e)
 getEnv = getJobEnv <$> ask
 
+{- | Get a parameter value with a key from the environment in action.
+     This is a special function for ParamEnv.
+-}
 param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a (b)
 param (key, defaultValue) = do
   env <- getEnv
@@ -85,39 +90,73 @@ param (key, defaultValue) = do
       
 ----------------
 
+{- | Do a dirty I/O action to the external system.
+     If it doesn't change the state of the external system, you can use liftIO instead.
+-}
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
 commitIO action = liftIO action
 
 ----------------
 
+{- | Set the result of the action. (for internal use)
+-}
 result :: (Env e, Unit a) => Maybe (JobResult a) -> ActionM e a ()
 result = modify . setResult
 
-fork :: (Env e, Unit a) => a -> ActionM e a ()
+{- | Create a job with a unit and schedule it.
+-}
+fork :: (Env e, Unit a)
+        => a -- ^ a unit
+        -> ActionM e a ()
 fork ju = forkWith ju Nothing
 
-forkOnTime :: (Env e, Unit a) => UTCTime -> a -> ActionM e a ()
+{- | Create a job with a unit and schedule it at a specific time.
+-}
+forkOnTime :: (Env e, Unit a)
+              => UTCTime        -- ^ absolute time in UTC
+              -> a              -- ^ a unit
+              -> ActionM e a ()
 forkOnTime t ju = forkWith ju (Just t)
 
+{- | Create a job with a unit and schedule it after a few micro seconds.
+-}
 forkInTime :: (Env e, Unit a) => NominalDiffTime -> a -> ActionM e a ()
 forkInTime tDiff ju = do
   currentTime <- liftIO $ getCurrentTime
   forkWith ju (Just (addUTCTime tDiff currentTime))
 
-next :: (Env e, Unit a) => a -> ActionM e a ()
+{- | Move to the next state immediately.
+     After the execution of the action the job being processed will be
+     moved to the given state. The next action will be invoked immediately
+     and can continue to work without being interleaf by another job.
+-}
+next :: (Env e, Unit a)
+        => a              -- ^ the next state
+        -> ActionM e a ()
 next ju = modify $ \s -> Just $ setNextJob ju $ fromMaybe def s
 
+{- | Finish a job.
+-}
 fin :: (Env e, Unit a) => ActionM e a ()
 fin = result def
 
+{- | If the unit passed by the job queue system cannot be processed by the
+     action function, the function should call this.
+-}
 none :: (Env e, Unit a) => ActionM e a ()
 none = result Nothing
 
+{- | Abort the execution of a state machine.
+     If a critical problem is found and need to move to the failure state,
+     call this function with a human readable meassage.
+-}
 abort :: (Env e, Unit a) => Alert -> String -> ActionM e a b
 abort level msg = do
   result $ Just $ Left $ Failure level msg
   throwError $ ActionError level msg
 
+{- | Put a message to syslog daemon.
+-}
 logMsg :: (Env e, Unit a) => Alert -> String -> ActionM e a ()
 logMsg level msg = liftIO $ case level of
   Critical -> criticalM "control" msg

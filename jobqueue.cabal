@@ -1,8 +1,8 @@
 Name:           jobqueue
-Version:        0.0.5
-Description:    A job queue library using Zookeeper
-License:        TBD
-License-file:   LICENSE
+Version:        0.0.7
+Synopsis:       A job queue library
+License:        OtherLicense
+License-File:   LICENSE
 Author:         Kiyoshi Ikehara
 Maintainer:     kiyoshi.ikehara at gree.net
 Copyright:      GREE, Inc.
@@ -12,10 +12,19 @@ Cabal-Version:  >=1.8
 Description:
   Haskell JobQueue is a library used for building a job scheduler with priority queues.
   The state of jobs is stored in a backend database such as Apache Zookeeper or other 
-  highly reliable mesage queue systems.
+  highly reliable message queue systems.
+
+Source-Repository head
+  type:     git
+  location: https://github.com/gree/haskell-jobqueue.git
+
+Source-Repository this
+  type:     git
+  location: https://github.com/gree/haskell-jobqueue.git
+  tag:      0.0.7
   
 Library
-  Ghc-Options:     -O2 -Wall
+  Ghc-Options:     -Wall
   Build-Depends:   base                     >= 4 && < 5
                  , mtl
                  , network                  >= 2.3.2
@@ -32,6 +41,8 @@ Library
                  , zookeeper
                  , attoparsec
                  , data-default
+                 , HDBC
+                 , HDBC-sqlite3
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -44,11 +55,12 @@ Library
                  , Network.JobQueue.Backend.Class
                  , Network.JobQueue.Backend.Types
                  , Network.JobQueue.Backend.Zookeeper
+                 , Network.JobQueue.Backend.Sqlite3
   Other-modules:   Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 
 Executable jobqueue-sample-hello
-  Ghc-Options:     -threaded -O2 -Wall -rtsopts
+  Ghc-Options:     -threaded -Wall -rtsopts
   Build-Depends:   base >=4 && <5
                  , jobqueue
                  , bytestring
@@ -59,7 +71,7 @@ Executable jobqueue-sample-hello
   Extensions:      DeriveDataTypeable
 
 Executable jobqueue-sample-fibonacci
-  Ghc-Options:     -threaded -O2 -Wall -rtsopts
+  Ghc-Options:     -threaded -Wall -rtsopts
   Build-Depends:   base >=4 && <5
                  , jobqueue
                  , network
@@ -70,3 +82,20 @@ Executable jobqueue-sample-fibonacci
   Hs-source-dirs:  sample
   Main-is:         fibonacci.hs
   Extensions:      DeriveDataTypeable
+
+Test-Suite test-jobqueue
+  Ghc-Options:     -threaded -O2 -Wall
+  Build-depends:   base
+                 , bytestring
+                 , network >= 2.3.2
+                 , split
+                 , QuickCheck == 2.5.1.1
+                 , HUnit
+                 , test-framework
+                 , test-framework-th
+                 , test-framework-hunit
+                 , test-framework-quickcheck2
+                 , jobqueue
+  Type:            exitcode-stdio-1.0
+  Hs-source-dirs:  test
+  Main-is:         test-jobqueue.hs

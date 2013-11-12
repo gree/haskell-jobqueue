@@ -40,7 +40,7 @@ instance BackendQueue ZookeeperQueue where
   writeQueue   = writeZQueue
   writeQueue'  = writeZQueue'
   listQueue    = listZQueue
-  itemsQueue   = itemsQueue
+  itemsQueue   = itemsZQueue
   countQueue   = countZQueue
   
 

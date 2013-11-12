@@ -7,10 +7,74 @@ Haskell JobQueue is a library used for building a job scheduler with priority qu
 The state of jobs is stored in a backend database such as Apache Zookeeper or other 
 highly reliable mesage queue systems.
 
-* Job
-Jobs are described as state machines and each state only do one thing especially for
-modifying operations. This prevents the job from resulting in a failure state which
-is not able to be handled by the state machine.
+[@Unit@]
+
+Unit represents each state in an entire state machine. Units are described as value
+constructors in Haskell code.
+Unit itself is not executable. To execute using job queue system, extra information such
+as job identifier, scheduled time is needed. An instance of a unit is wrapped by a 'job'
+and stored into the job queue with those information.
+
+The code shown below describes how to define a Unit.
+
+>  data JobUnit = HelloStep | WorldStep deriving (Show, Read)
+>  
+>  instance Unit JobUnit where
+
+In this case, you define JobUnit type with 2 states, HelloStep and WorldStep.
+This is the entire state machine of your job queue system.
+You can define nested or child state machines by defining more complex data type as 
+long as they are serializable with read and show functions.
+
+Please see "Network.JobQueue.Class".
+
+[@Job@]
+
+Each task executed by state machines (such as checking server state or repairing a
+cluster) are called 'job'.
+
+A Job is described as a particlar state of a state machine and each state only do one
+thing especially for modifying operations.
+This prevents the job from resulting in a failure state which is not able to be handled
+by the state machine.
+
+You don't need to know the internal data structure of a job but still need to understand
+the behavior when you write action code.
+
+Please see "Network.JobQueue.Job".
+
+[@Environment@]
+
+Each unit can contain information used in the action of the state. But in many cases,
+there are some information used by almost all the state and it is comvenient if there is 
+some kind of global data set that is accessible from all the state's actions.
+
+For this reason, you can define global data structure called environment.
+The enviroment can be retrieved using getEnv function in action monad.
+
+>  env <- getEnv
+
+Please see "Network.JobQueue.Class".
+
+[@Action@]
+
+An action is a function that is called with a unit. You can define actions by "process"
+function.
+
+>    let withJobQueue = buildJobQueue loc name $ do
+>          process $ \WorldStep -> commitIO (putStrLn "world") >> fin
+>          process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
+
+In general, an action do the following things:
+
+  * check if the precondition of the state is satisfied or not
+
+  * do the action associated with the state
+
+  * check the postcondition and return the next state.
+
+Please see "Network.JobQueue.Action".
+
 -}
 
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -53,7 +117,7 @@ import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
 
-{- | Build a function that takes an action function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
+{- | Build a function that takes a function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
 
 The following code executes jobs as long as the queue is not empty.
 
@@ -80,7 +144,7 @@ The following code registers a job with initial state.
 buildJobQueue :: (Env e, Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
                  -> String          -- ^ queue name (ex. \"/jobqueue\")
                  -> JobM e a ()     -- ^ job construction function
-                 -> ((JobQueue e a -> IO ()) -> IO ())
+                 -> ((JobQueue e a -> IO ()) -> IO ()) -- ^ job queue executor
 buildJobQueue loc name jobm = \action -> do
   bracket (openSession loc) (closeSession) $ \session -> do
     jq <- openJobQueue session name def jobm
