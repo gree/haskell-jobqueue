@@ -1,12 +1,12 @@
 
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs #-}
 
 module Network.JobQueue.Backend.Types where
 
 import Network.JobQueue.Backend.Class
 
-data Backend = forall q . (BackendQueue q) => Backend {
-    bOpenQueue :: (String -> IO q)
-  , bClose :: Backend -> IO ()
-  }
-
+data Backend where
+  Backend :: (BackendQueue q) => {
+      bOpenQueue :: String -> IO q
+    , bClose :: Backend -> IO ()
+    } -> Backend
