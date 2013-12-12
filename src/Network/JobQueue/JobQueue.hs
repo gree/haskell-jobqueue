@@ -1,5 +1,5 @@
 
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs #-}
 
 module Network.JobQueue.JobQueue (
     JobQueue
@@ -64,12 +64,13 @@ instance (Unit a) => Default (Settings a) where
       handleAfterExecute :: (Unit a) => Job a -> IO ()
       handleAfterExecute _job = return ()
 
-data JobQueue e a = forall q. (BackendQueue q) => JobQueue {
+data JobQueue e a where
+  JobQueue :: (BackendQueue q) => {
     jqBackendQueue :: q
   , jqActionState :: JobActionState e a
   , jqFailureHandleFn :: FailureHandleFn a
   , jqAfterExecuteFn :: AfterExecuteHandleFn a
-  }
+  } -> JobQueue e a
 
 {- | A session handler
 
