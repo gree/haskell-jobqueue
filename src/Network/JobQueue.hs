@@ -23,49 +23,48 @@ The code shown below describes how to define a Unit.
 
 In this case, you define JobUnit type with 2 states, HelloStep and WorldStep.
 This is the entire state machine of your job queue system.
-You can define nested or child state machines by defining more complex data type as 
+You can define nested or child state machines by defining more complex data types as 
 long as they are serializable with read and show functions.
 
-Please see "Network.JobQueue.Class".
+For more information, see "Network.JobQueue.Class".
 
 [@Job@]
 
 Each task executed by state machines (such as checking server state or repairing a
-cluster) are called 'job'.
+cluster) is called a 'job'.
 
-A Job is described as a particlar state of a state machine and each state only do one
-thing especially for modifying operations.
-This prevents the job from resulting in a failure state which is not able to be handled
-by the state machine.
+A job is described as a particular state of a state machine. Each state only does one
+thing (especially for modifying operations).
+This prevents jobs ending in a failure state, which the state machine is unable to handle.
 
-You don't need to know the internal data structure of a job but still need to understand
-the behavior when you write action code.
+You don't have to know the internal data structure of a job, but need to understand
+its when you write action code.
 
-Please see "Network.JobQueue.Job".
+For more information, see "Network.JobQueue.Job".
 
 [@Environment@]
 
 Each unit can contain information used in the action of the state. But in many cases,
-there are some information used by almost all the state and it is comvenient if there is 
+there is some information used by almost all states and it is convenient if there is 
 some kind of global data set that is accessible from all the state's actions.
 
-For this reason, you can define global data structure called environment.
+For this reason, you can define global data structures called environment.
 The enviroment can be retrieved using getEnv function in action monad.
 
 >  env <- getEnv
 
-Please see "Network.JobQueue.Class".
+For more information, see "Network.JobQueue.Class".
 
 [@Action@]
 
-An action is a function that is called with a unit. You can define actions by "process"
-function.
+An action is a function that is called with a unit. You can define actions with the 
+"process" function.
 
 >    let withJobQueue = buildJobQueue loc name $ do
 >          process $ \WorldStep -> commitIO (putStrLn "world") >> fin
 >          process $ \HelloStep -> commitIO (putStr "hello, ") >> next WorldStep
 
-In general, an action do the following things:
+In general, an action does the following things:
 
   * check if the precondition of the state is satisfied or not
 
@@ -73,7 +72,7 @@ In general, an action do the following things:
 
   * check the postcondition and return the next state.
 
-Please see "Network.JobQueue.Action".
+For more information, see "Network.JobQueue.Action".
 
 -}
 

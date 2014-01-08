@@ -128,7 +128,7 @@ forkInTime tDiff ju = do
 {- | Move to the next state immediately.
      After the execution of the action the job being processed will be
      moved to the given state. The next action will be invoked immediately
-     and can continue to work without being interleaf by another job.
+     and can continue to work without being interrupted by another job.
 -}
 next :: (Env e, Unit a)
         => a              -- ^ the next state
@@ -147,7 +147,7 @@ none :: (Env e, Unit a) => ActionM e a ()
 none = result Nothing
 
 {- | Abort the execution of a state machine.
-     If a critical problem is found and need to move to the failure state,
+     If a critical problem is found and there is a need to switch to the failure state,
      call this function with a human readable meassage.
 -}
 abort :: (Env e, Unit a) => Alert -> String -> ActionM e a b
