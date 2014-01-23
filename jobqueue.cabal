@@ -1,5 +1,5 @@
 Name:           jobqueue
-Version:        0.0.7
+Version:        0.0.8
 Synopsis:       A job queue library
 License:        OtherLicense
 License-File:   LICENSE
@@ -21,8 +21,12 @@ Source-Repository head
 Source-Repository this
   type:     git
   location: https://github.com/gree/haskell-jobqueue.git
-  tag:      0.0.7
+  tag:      0.0.8
   
+Flag sample
+  Description: Build sample programs
+  Default: False
+
 Library
   Ghc-Options:     -Wall
   Build-Depends:   base                     >= 4 && < 5
@@ -69,6 +73,10 @@ Executable jobqueue-sample-hello
   Hs-source-dirs:  sample
   Main-is:         hello.hs
   Extensions:      DeriveDataTypeable
+  if flag(sample)
+    Buildable: True
+  else
+    Buildable: False
 
 Executable jobqueue-sample-fibonacci
   Ghc-Options:     -threaded -Wall -rtsopts
@@ -82,6 +90,10 @@ Executable jobqueue-sample-fibonacci
   Hs-source-dirs:  sample
   Main-is:         fibonacci.hs
   Extensions:      DeriveDataTypeable
+  if flag(sample)
+    Buildable: True
+  else
+    Buildable: False
 
 Test-Suite test-jobqueue
   Ghc-Options:     -threaded -O2 -Wall
@@ -99,3 +111,7 @@ Test-Suite test-jobqueue
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test
   Main-is:         test-jobqueue.hs
+  if flag(sample)
+    Buildable: True
+  else
+    Buildable: False
