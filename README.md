@@ -20,7 +20,7 @@ How to install
 Execute the cabal install command and the library and example programs will be placed into your .cabal directory.
 
     > cd haskell-jobqueue/
-    > cabal install
+    > cabal install --fsample
 
 How to use
 ----------
