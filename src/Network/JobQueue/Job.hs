@@ -1,7 +1,5 @@
-{- |
-Module: Network.JobQueue.Job
-Maintainer: Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
--}
+-- Copyright (c) Gree, Inc. 2013
+-- License: MIT-style
 
 module Network.JobQueue.Job (
     Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority)

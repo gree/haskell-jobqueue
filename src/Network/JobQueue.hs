@@ -1,10 +1,14 @@
-
 {- |
-Module: Network.JobQueue
-Maintainer: Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+  Module      : Network.JobQueue
+  Copyright   : (c) Gree, Inc. 2013
+  License     : MIT-style
+  
+  Maintainer  : Kiyoshi Ikehara <kiyoshi.ikehara@gree.net>
+  Stability   : experimental
+  Portability : portable
 
-Haskell JobQueue is a library used for building a job scheduler with priority queues.
-The state of jobs is stored in a backend database such as Apache Zookeeper or other 
+Haskell JobQueue is a library used for building a job scheduler with a priority queue.
+The state of a job is stored in a backend database such as Apache Zookeeper or other 
 highly reliable mesage queue systems.
 
 [@Unit@]

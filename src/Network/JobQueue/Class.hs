@@ -1,3 +1,5 @@
+-- Copyright (c) Gree, Inc. 2013
+-- License: MIT-style
 
 {- | Class definitions
 -}

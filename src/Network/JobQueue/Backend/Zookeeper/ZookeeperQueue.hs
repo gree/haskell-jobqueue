@@ -1,3 +1,5 @@
+-- Copyright (c) Gree, Inc. 2013
+-- License: MIT-style
 
 module Network.JobQueue.Backend.Zookeeper.ZookeeperQueue (
     ZookeeperQueue
@@ -58,7 +60,6 @@ initZQueueWithPrefix :: Z.ZHandle -> String -> Z.Acls -> String -> ZookeeperQueu
 initZQueueWithPrefix zh path acls prefix = ZookeeperQueue zh path prefix acls
 
 -- take
--- XXX
 readZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String))
 readZQueue zkQueue = do
   children <- getChildren zkQueue
