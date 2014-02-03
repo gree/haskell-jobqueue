@@ -95,6 +95,23 @@ Executable jobqueue-sample-fibonacci
   else
     Buildable: False
 
+Executable jobqueue-sample-priority
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , network
+                 , bytestring
+                 , containers
+                 , transformers
+                 , data-default
+  Hs-source-dirs:  sample
+  Main-is:         priority.hs
+  Extensions:      DeriveDataTypeable
+  if flag(sample)
+    Buildable: True
+  else
+    Buildable: False
+
 Test-Suite test-jobqueue
   Ghc-Options:     -threaded -O2 -Wall
   Build-depends:   base
