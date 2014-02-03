@@ -1,5 +1,5 @@
 Name:           jobqueue
-Version:        0.0.8
+Version:        0.0.9
 Synopsis:       A job queue library
 License:        OtherLicense
 License-File:   LICENSE
@@ -21,7 +21,7 @@ Source-Repository head
 Source-Repository this
   type:     git
   location: https://github.com/gree/haskell-jobqueue.git
-  tag:      0.0.8
+  tag:      0.0.9
   
 Flag sample
   Description: Build sample programs
