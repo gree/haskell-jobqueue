@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as BS
 
 class BackendQueue q where
   readQueue    :: q -> IO (Maybe (BS.ByteString, String))
-  peekQueue    :: q -> IO (Maybe (BS.ByteString, String, Int))
+  peekQueue    :: q -> IO (Maybe (BS.ByteString, String, String, Int))
   updateQueue  :: q -> String -> BS.ByteString -> Int -> IO (Bool)
   deleteQueue  :: q -> String -> IO (Bool)
   writeQueue   :: q -> BS.ByteString -> IO (String)

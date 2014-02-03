@@ -88,24 +88,27 @@ readZQueue zkQueue = do
     handleZooError e = throw e
 
 -- peek
-peekZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String, Int))
+peekZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String, String, Int))
 peekZQueue zkQueue = do
   children <- getChildren zkQueue
   case children of
     [] -> return (Nothing)
     _  -> getHead (sortChildren children) `catch` handleZooError
   where
-    getHead :: [String] -> IO (Maybe (C.ByteString, String, Int))
+    idSuffixLen = 10
+    
+    getHead :: [String] -> IO (Maybe (C.ByteString, String, String, Int))
     getHead [] = return Nothing
     getHead (x:xs) = do
       (value, stat) <- Z.get (zqHandle zkQueue) (fullPath zkQueue x) Z.NoWatch
       case value of
-        Just v -> return $ Just (v, x, fromIntegral $ Z.stat_version stat)
+        Just v -> return $ Just (v, x, drop (length x - idSuffixLen) x, fromIntegral $ Z.stat_version stat)
         Nothing -> getHead xs
-    handleZooError :: Z.ZooError -> IO (Maybe (C.ByteString, String, Int))
+    
+    handleZooError :: Z.ZooError -> IO (Maybe (C.ByteString, String, String, Int))
     handleZooError (Z.ErrNoNode _) = peekZQueue zkQueue
     handleZooError e = throw e
-
+    
 -- update
 updateZQueue :: ZookeeperQueue -> String -> C.ByteString -> Int -> IO (Bool)
 updateZQueue zkQueue znodeName value version = update `catch` handleZooError
@@ -113,6 +116,7 @@ updateZQueue zkQueue znodeName value version = update `catch` handleZooError
     update = do
       Z.set (zqHandle zkQueue) (fullPath zkQueue znodeName) (Just value) version
       return (True)
+    
     handleZooError :: Z.ZooError -> IO (Bool)
     handleZooError (Z.ErrBadVersion _) = return (False)
     handleZooError (Z.ErrNoNode _) = return (False)

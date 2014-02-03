@@ -20,7 +20,6 @@ module Network.JobQueue.JobQueue (
   , deleteJob
   ) where
 
-import Prelude hiding (catch)
 import Control.Applicative
 import qualified Data.ByteString.Char8 as C
 import qualified Zookeeper as Z
@@ -123,12 +122,12 @@ countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 -}
 executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
 executeJob jobqueue env = do
-  obj <- peekJob jobqueue
-  case obj of
+  r <- peekJob jobqueue
+  case r of
     Nothing -> return ()
-    Just (job, nodeName, version) -> do
+    Just (job, nodeName, idName, version) -> do
       let eitherJob = case jobState job of
-            Initialized -> case maybeRead $ drop (length nodeName - idSuffixLen) nodeName of
+            Initialized -> case maybeRead idName of
               Just ident -> Right $ job { jobState = Runnable, jobId = ident }
               Nothing -> Right $ job { jobState = Runnable, jobId = (-1) }
             Runnable -> Right $ job { jobState = Running }
@@ -148,7 +147,6 @@ executeJob jobqueue env = do
         Left Skip -> return ()
   where
     maybeRead = fmap fst . listToMaybe . reads
-    idSuffixLen = 10
 
 {- | Schedule a job.
 -}
@@ -170,15 +168,15 @@ deleteJob JobQueue { jqBackendQueue = bq } nodeName = deleteQueue bq nodeName
 
 ---------------------------------------------------------------- PRIVATE
 
-peekJob :: (Unit a) => JobQueue e a -> IO (Maybe (Job a, String, Int))
+peekJob :: (Unit a) => JobQueue e a -> IO (Maybe (Job a, String, String, Int))
 peekJob JobQueue { jqBackendQueue = bq } = do
   obj <- peekQueue bq
   case obj of
     Nothing -> return (Nothing)
-    Just (value, nodeName, version) -> do
+    Just (value, nodeName, idName, version) -> do
       case maybeRead $ C.unpack value of
         Nothing -> return (Nothing)
-        Just job -> return (Just (job, nodeName, version))
+        Just job -> return (Just (job, nodeName, idName, version))
   where
     maybeRead = fmap fst . listToMaybe . reads
 
