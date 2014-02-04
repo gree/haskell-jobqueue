@@ -4,7 +4,6 @@
 module Network.JobQueue.Backend.Zookeeper.ZookeeperQueue (
     ZookeeperQueue
   , initZQueue
-  , initZQueueWithPrefix
   , readZQueue
   , peekZQueue
   , updateZQueue
@@ -46,16 +45,16 @@ instance BackendQueue ZookeeperQueue where
 
 maxPrio :: Int
 maxPrio = 999
+
 minPrio :: Int
 minPrio = -999
+
+qnPrefix = "qn-"
 
 ----
 
 initZQueue :: Z.ZHandle -> String -> Z.Acls -> ZookeeperQueue
-initZQueue zh path acls = ZookeeperQueue zh path "qn-" acls
-
-initZQueueWithPrefix :: Z.ZHandle -> String -> Z.Acls -> String -> ZookeeperQueue
-initZQueueWithPrefix zh path acls prefix = ZookeeperQueue zh path prefix acls
+initZQueue zh path acls = ZookeeperQueue zh path qnPrefix acls
 
 -- take
 readZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String))
@@ -178,7 +177,7 @@ getChildren zkQueue = do
   return (results)
 
 sortChildren :: [String] -> [String]
-sortChildren = sort
+sortChildren = sort . filter (isPrefixOf qnPrefix)
 
 fullPath :: ZookeeperQueue -> String -> String
 fullPath zkQueue x = (zqBasePath zkQueue ++ "/" ++ x)
