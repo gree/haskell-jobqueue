@@ -156,7 +156,7 @@ scheduleJob :: (Unit a)
                -> IO ()
 scheduleJob JobQueue { jqBackendQueue = bq } ju = do
   job <- createJob Initialized ju
-  void $ writeQueue' bq (pack job) (getPriority ju)
+  void $ writeQueue bq (pack job) (getPriority ju)
 
 {- | Delete a job from a job queue.
 -}
@@ -189,7 +189,7 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
       runActionState actionState env (jobUnit currentJob) `catch` handleSome
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
-      when r $ void $ writeQueue' bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
+      when r $ void $ writeQueue bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
       return (Nothing)
   where
     handleSome :: SomeException -> IO (Maybe (JobResult a))
@@ -233,7 +233,7 @@ rescheduleJob JobQueue { jqBackendQueue = bq } mOntime ju = do
   job <- case mOntime of
     Just ontime -> createOnTimeJob Initialized ontime ju
     Nothing -> createJob Initialized ju
-  void $ writeQueue' bq (pack $ job) (getPriority ju)
+  void $ writeQueue bq (pack $ job) (getPriority ju)
 
 updateJob :: (Unit a) => JobQueue e a -> String -> Job a -> Int -> IO (Bool)
 updateJob JobQueue { jqBackendQueue = bq } nodeName job version = do

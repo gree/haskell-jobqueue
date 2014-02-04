@@ -17,7 +17,6 @@ instance BackendQueue Sqlite3Queue where
   updateQueue  = updateDBQueue
   deleteQueue  = deleteDBQueue
   writeQueue   = writeDBQueue
-  writeQueue'  = writeDBQueue'
   listQueue    = listDBQueue
   itemsQueue   = itemsDBQueue
   countQueue   = countDBQueue
@@ -54,11 +53,8 @@ peekDBQueue (Sqlite3Queue conn queueName) = withTransaction conn $ \conn' -> do
     [] -> return (Nothing)
     ((key:value:version:_):_) -> return (Just (fromSql value, fromSql key, fromSql key, fromSql version))
 
-writeDBQueue :: Sqlite3Queue -> BS.ByteString -> IO (String)
-writeDBQueue q value = writeDBQueue' q value 0
-
-writeDBQueue' :: Sqlite3Queue -> BS.ByteString -> Int -> IO (String)
-writeDBQueue' (Sqlite3Queue conn queueName) value prio = withTransaction conn $ \conn' -> do
+writeDBQueue :: Sqlite3Queue -> BS.ByteString -> Int -> IO (String)
+writeDBQueue (Sqlite3Queue conn queueName) value prio = withTransaction conn $ \conn' -> do
   run conn' "INSERT INTO ?(prio, value, version) VALUES (?,?,0)" [toSql queueName, toSql prio, toSql value]
   sqlvalues <- quickQuery conn' "SELECT key FROM ? ORDER BY prio, key DESC LIMIT 1" [toSql queueName]
   case sqlvalues of

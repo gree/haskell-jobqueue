@@ -10,7 +10,6 @@ module Network.JobQueue.Backend.Zookeeper.ZookeeperQueue (
   , updateZQueue
   , deleteZQueue
   , writeZQueue
-  , writeZQueue'
   , destroyZQueue
   , listZQueue
   , itemsZQueue
@@ -40,7 +39,6 @@ instance BackendQueue ZookeeperQueue where
   updateQueue  = updateZQueue
   deleteQueue  = deleteZQueue
   writeQueue   = writeZQueue
-  writeQueue'  = writeZQueue'
   listQueue    = listZQueue
   itemsQueue   = itemsZQueue
   countQueue   = countZQueue
@@ -127,12 +125,8 @@ deleteZQueue :: ZookeeperQueue -> String -> IO (Bool)
 deleteZQueue = deleteChild
 
 -- offer
-writeZQueue :: ZookeeperQueue -> C.ByteString -> IO (String)
-writeZQueue zkQueue value = writeZQueue' zkQueue value 0
-
--- offer
-writeZQueue' :: ZookeeperQueue -> C.ByteString -> Int -> IO (String)
-writeZQueue' zkQueue value prio = do
+writeZQueue :: ZookeeperQueue -> C.ByteString -> Int -> IO (String)
+writeZQueue zkQueue value prio = do
   r <- Z.create (zqHandle zkQueue)
                 (zqBasePath zkQueue ++ "/" ++ (nodePrefix (zqNodeName zkQueue) prio))
                 (Just value)
