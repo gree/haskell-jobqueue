@@ -86,14 +86,14 @@ countDBQueue (Sqlite3Queue conn queueName) = withTransaction conn $ \conn' -> do
 
 itemsDBQueue :: Sqlite3Queue -> IO ([String])
 itemsDBQueue (Sqlite3Queue conn queueName) = withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT COUNT (*) FROM " ++ queueName ++ " ORDER BY prio, key LIMIT 1") []
+  sqlvalues <- quickQuery conn' ("SELECT key FROM " ++ queueName ++ " ORDER BY prio, key") []
   case sqlvalues of
     [] -> return ([])
     (keys:_) -> return (map fromSql keys)
 
 listDBQueue :: Sqlite3Queue -> IO ([BS.ByteString])
 listDBQueue (Sqlite3Queue conn queueName) = withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT COUNT (*) FROM " ++ queueName ++ " ORDER BY prio, key LIMIT 1") []
+  sqlvalues <- quickQuery conn' ("SELECT value FROM " ++ queueName ++ " ORDER BY prio, key") []
   case sqlvalues of
     [] -> return ([])
     (keys:_) -> return (map fromSql keys)
