@@ -13,7 +13,13 @@ openZookeeperBackend :: String -> IO Backend
 openZookeeperBackend endpoint = do
   Z.setDebugLevel Z.ZLogError
   zvar <- newTVarIO Nothing
-  _ <- forkIO $ Z.withZookeeper endpoint 100000 Nothing Nothing $ \z -> do
+  stateVar <- newTVarIO Z.ConnectingState
+  _ <- forkIO $ Z.withZookeeper endpoint 100000 (Just $ watcher stateVar) Nothing $ \z -> do
+    atomically $ do
+      state <- readTVar stateVar
+      case state of
+        Z.ConnectingState -> retry
+        _ -> return ()
     atomically $ writeTVar zvar (Just z)
     atomically $ do
       mz <- readTVar zvar
@@ -26,6 +32,12 @@ openZookeeperBackend endpoint = do
         return $ initZQueue z queueName Z.OpenAclUnsafe
     , bClose = \_ -> atomically $ writeTVar zvar Nothing
     }
+  where
+    watcher :: TVar Z.State -> Z.Watcher
+    watcher stateVar _z event state _mZnode = do
+      case event of
+        Z.SessionEvent -> atomically $ writeTVar stateVar state
+        _ -> return ()
 
 newZookeeperBackend :: Z.Zookeeper -> Backend
 newZookeeperBackend zh = Backend {
