@@ -15,7 +15,6 @@ module Network.JobQueue.Backend.Zookeeper.ZookeeperQueue (
   , countZQueue
   ) where
 
-import Prelude hiding (catch)
 import qualified Zookeeper as Z
 import qualified Data.ByteString.Char8 as C
 import Control.Exception hiding (handle)
@@ -49,6 +48,7 @@ maxPrio = 999
 minPrio :: Int
 minPrio = -999
 
+qnPrefix :: String
 qnPrefix = "qn-"
 
 ----
