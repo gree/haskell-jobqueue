@@ -54,6 +54,7 @@ Library
                  , Network.JobQueue.Action
                  , Network.JobQueue.Job
                  , Network.JobQueue.JobQueue
+                 , Network.JobQueue.JobQueue.Internal
                  , Network.JobQueue.JobResult
                  , Network.JobQueue.Backend
                  , Network.JobQueue.Backend.Class
