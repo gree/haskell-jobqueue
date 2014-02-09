@@ -24,8 +24,6 @@ module Network.JobQueue.Types (
 
 import Data.Time.Clock
 
-{-# LANGUAGE ExistentialQuantification #-}
-
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
@@ -33,7 +31,7 @@ import Data.Default (Default, def)
 
 import Network.JobQueue.Class
 
---------------------------------
+-------------------------------- Types
 
 data Alert = Critical | Error | Warning | Notice | Info deriving (Show)
 
@@ -43,6 +41,8 @@ data Next a = Next {
   }
 
 data Failure = Failure Alert String
+
+-------------------------------- JobResult
 
 type JobResult a = Either Failure (Next a)
 
@@ -57,7 +57,7 @@ addForkJob :: (Unit a) => (a, Maybe UTCTime) -> (JobResult a) -> (JobResult a)
 addForkJob (x, mt) (Right next@(Next _ju xs)) = Right next { nextForks = ((x, mt):xs) }
 addForkJob (_, _) jr@(Left _) = jr
 
---------------------------------
+-------------------------------- JobActionState
 
 type ActionFn e a = e -> a -> IO (Maybe (JobResult a))
 
@@ -69,7 +69,7 @@ addAction action s@(JobActionState { jobActions = actions }) = s { jobActions = 
 instance Default (JobActionState e a) where
   def = JobActionState []
 
---------------------------------
+-------------------------------- ActionM
 
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
   deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
