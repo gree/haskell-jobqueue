@@ -11,9 +11,11 @@ import Test.Framework.Providers.HUnit
 import Test.HUnit
 import System.Directory
 import System.IO.Error (isDoesNotExistError)
+import System.Environment (lookupEnv)
 
 import qualified Data.ByteString.Char8 as BS
 import Network.JobQueue.Backend.Sqlite3
+import Network.JobQueue.Backend.Zookeeper
 import Network.JobQueue.Backend.Types
 import Network.JobQueue.Backend.Class
 
@@ -51,10 +53,15 @@ case_items1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
 
 withBackend :: (Backend -> Assertion) -> Assertion
 withBackend act = do
-  let testFile = "test.sqlite3"
-  r <- bracket (openSqlite3Backend testFile) (\b -> bClose b b) act
-  removeIfExists testFile
-  return r
+  backend <- lookupEnv "JOBQUEUE_TEST_BACKEND"
+  case backend of
+    Just "zookeeper" -> do
+      bracket (openZookeeperBackend "localhost:2181") (\b -> bClose b b) act
+    _ -> do
+      let testFile = "test.sqlite3"
+      r <- bracket (openSqlite3Backend testFile) (\b -> bClose b b) act
+      removeIfExists testFile
+      return r
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists

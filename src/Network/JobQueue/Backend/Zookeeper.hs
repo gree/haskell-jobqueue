@@ -1,8 +1,12 @@
 -- Copyright (c) Gree, Inc. 2013
 -- License: MIT-style
 
-module Network.JobQueue.Backend.Zookeeper where
+module Network.JobQueue.Backend.Zookeeper (
+    openZookeeperBackend
+  , newZookeeperBackend
+  ) where
 
+import Data.List
 import qualified Database.Zookeeper as Z
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -27,12 +31,16 @@ openZookeeperBackend endpoint = do
         Just _ -> retry
         Nothing -> return ()
   return $ Backend {
-      bOpenQueue = \queueName -> do
-        z <- atomically $ readTVar zvar >>= maybe retry return
-        return $ initZQueue z queueName Z.OpenAclUnsafe
+      bOpenQueue = openQueue zvar
     , bClose = \_ -> atomically $ writeTVar zvar Nothing
     }
   where
+    openQueue :: TVar (Maybe Z.Zookeeper) -> String -> IO (ZookeeperQueue)
+    openQueue zvar queueName = do
+      z <- atomically $ readTVar zvar >>= maybe retry return
+      zq <- initZQueue z (basePath queueName) Z.OpenAclUnsafe
+      return zq
+
     watcher :: TVar Z.State -> Z.Watcher
     watcher stateVar _z event state _mZnode = do
       case event of
@@ -41,7 +49,8 @@ openZookeeperBackend endpoint = do
 
 newZookeeperBackend :: Z.Zookeeper -> Backend
 newZookeeperBackend zh = Backend {
-      bOpenQueue = \queueName -> return $ initZQueue zh queueName Z.OpenAclUnsafe
+      bOpenQueue = \queueName -> initZQueue zh (basePath queueName) Z.OpenAclUnsafe
     , bClose = \_ -> return ()
     }
 
+basePath queueName = if "/" `isPrefixOf` queueName then queueName else "/" ++ queueName

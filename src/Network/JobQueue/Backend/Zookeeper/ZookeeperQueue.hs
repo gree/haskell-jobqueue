@@ -54,8 +54,18 @@ qnPrefix = "qn-"
 
 ----
 
-initZQueue :: Z.Zookeeper -> String -> Z.AclList -> ZookeeperQueue
-initZQueue zh path acls = ZookeeperQueue zh path qnPrefix acls
+initZQueue :: Z.Zookeeper -> String -> Z.AclList -> IO (ZookeeperQueue)
+initZQueue z path acls = do
+  e <- Z.exists z path Nothing
+  case e of
+    Right _stat -> return ()
+    Left Z.NoNodeError -> do
+      e' <- Z.create z path Nothing acls []
+      case e' of
+        Right _ -> return ()
+        Left zkerr -> throwZKError "initZQueue" zkerr
+    Left zkerr -> throwZKError "initZQueue" zkerr
+  return (ZookeeperQueue z path qnPrefix acls)
 
 -- take
 readZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String))
