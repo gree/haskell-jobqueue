@@ -116,6 +116,7 @@ Test-Suite test-jobqueue
                  , bytestring
                  , network >= 2.3.2
                  , split
+                 , directory
                  , QuickCheck == 2.5.1.1
                  , HUnit
                  , test-framework
@@ -126,7 +127,3 @@ Test-Suite test-jobqueue
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test
   Main-is:         test-jobqueue.hs
-  if flag(sample)
-    Buildable: True
-  else
-    Buildable: False
