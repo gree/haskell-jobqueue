@@ -21,6 +21,7 @@ import Control.Exception hiding (handle)
 import Data.List
 import Control.Monad
 import Data.Maybe
+import Data.List.Split
 
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
@@ -145,7 +146,7 @@ writeZQueue zkQueue value prio = do
                 (zqAcls zkQueue)
                 [Z.Sequence]
   case r of
-    Right znode -> return znode
+    Right znode -> return $ head $ reverse (splitOn "/" znode)
     Left zkerr -> throwZKError "writeZQueue" zkerr
 
 -- destroy

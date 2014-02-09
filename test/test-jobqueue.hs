@@ -38,6 +38,9 @@ case_count1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
   _ <- writeQueue q (BS.pack "hoge2") 0
   c2 <- countQueue q
   c2 @?= 2
+  _ <- readQueue q
+  _ <- readQueue q
+  return ()
 
 case_items1 :: Assertion
 case_items1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
@@ -48,6 +51,9 @@ case_items1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
   k2 <- writeQueue q (BS.pack "hoge2") 0
   e2 <- itemsQueue q
   e2 @?= [k1, k2]
+  _ <- readQueue q
+  _ <- readQueue q
+  return ()
 
 ---------------------------------------------------------------- Utils
 
