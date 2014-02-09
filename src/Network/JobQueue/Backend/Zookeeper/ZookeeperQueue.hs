@@ -15,7 +15,7 @@ module Network.JobQueue.Backend.Zookeeper.ZookeeperQueue (
   , countZQueue
   ) where
 
-import qualified Zookeeper as Z
+import qualified Database.Zookeeper as Z
 import qualified Data.ByteString.Char8 as C
 import Control.Exception hiding (handle)
 import Data.List
@@ -23,12 +23,13 @@ import Control.Monad
 import Data.Maybe
 
 import Network.JobQueue.Backend.Class
+import Network.JobQueue.Backend.Types
 
 data ZookeeperQueue = ZookeeperQueue {
-    zqHandle         :: Z.ZHandle
+    zqHandle         :: Z.Zookeeper
   , zqBasePath       :: String
   , zqNodeName       :: String
-  , zqAcls           :: Z.Acls
+  , zqAcls           :: Z.AclList
   }
 
 instance BackendQueue ZookeeperQueue where
@@ -53,7 +54,7 @@ qnPrefix = "qn-"
 
 ----
 
-initZQueue :: Z.ZHandle -> String -> Z.Acls -> ZookeeperQueue
+initZQueue :: Z.Zookeeper -> String -> Z.AclList -> ZookeeperQueue
 initZQueue zh path acls = ZookeeperQueue zh path qnPrefix acls
 
 -- take
@@ -62,66 +63,68 @@ readZQueue zkQueue = do
   children <- getChildren zkQueue
   case children of
     [] -> return (Nothing)
-    _  -> takeHead (sortChildren children) `catch` handleZooError
+    _  -> takeHead (sortChildren children)
   where
     takeHead [] = return (Nothing)
     takeHead (nodeName:xs) = do
-      let path = (zqBasePath zkQueue ++ "/" ++ nodeName)
-      (value, _stat) <- Z.get (zqHandle zkQueue) path Z.NoWatch
-      case value of
-        Just value' -> do
-          isDeleted <- deleteChild zkQueue nodeName
-          if isDeleted
-            then return (Just (value', nodeName))
-            else do
-              r <- Z.exists (zqHandle zkQueue) path Z.NoWatch
+      let path = zqBasePath zkQueue ++ "/" ++ nodeName
+      e <- Z.get (zqHandle zkQueue) path Nothing
+      case e of
+        Right (Just value, _stat) -> do
+          e' <- Z.delete (zqHandle zkQueue) path Nothing
+          case e' of
+            Right () -> return (Just (value, nodeName))
+            Left _zkerr -> do
+              r <- Z.exists (zqHandle zkQueue) path Nothing
               case r of
-                Just _stat -> takeHead (nodeName:xs)
-                Nothing -> takeHead xs
-        Nothing -> takeHead xs
-
-    handleZooError :: Z.ZooError -> IO (Maybe (C.ByteString, String))
-    handleZooError (Z.ErrNoNode _) = return (Nothing)
-    handleZooError e = throw e
+                Right _stat -> takeHead (nodeName:xs)
+                Left Z.NoNodeError -> takeHead xs
+                Left zkerr -> throwZKError "readZQueue" zkerr
+        Right (Nothing, _stat) -> takeHead xs -- ignore if the content is empty
+        Left Z.NoNodeError -> return (Nothing)
+        Left zkerr -> throwZKError "readZQueue" zkerr
 
 -- peek
 peekZQueue :: ZookeeperQueue -> IO (Maybe (C.ByteString, String, String, Int))
 peekZQueue zkQueue = do
   children <- getChildren zkQueue
   case children of
-    [] -> return (Nothing)
-    _  -> getHead (sortChildren children) `catch` handleZooError
+    [] -> return Nothing
+    _  -> getHead (sortChildren children)
   where
+    idSuffixLen :: Int
     idSuffixLen = 10
     
     getHead :: [String] -> IO (Maybe (C.ByteString, String, String, Int))
     getHead [] = return Nothing
     getHead (x:xs) = do
-      (value, stat) <- Z.get (zqHandle zkQueue) (fullPath zkQueue x) Z.NoWatch
-      case value of
-        Just v -> return $ Just (v, x, drop (length x - idSuffixLen) x, fromIntegral $ Z.stat_version stat)
-        Nothing -> getHead xs
-    
-    handleZooError :: Z.ZooError -> IO (Maybe (C.ByteString, String, String, Int))
-    handleZooError (Z.ErrNoNode _) = peekZQueue zkQueue
-    handleZooError e = throw e
+      e <- Z.get (zqHandle zkQueue) (fullPath zkQueue x) Nothing
+      case e of
+        Right (mValue, stat) -> do
+          case mValue of
+            Just v -> return $ Just (v, x, drop (length x - idSuffixLen) x, fromIntegral $ Z.statVersion stat)
+            Nothing -> getHead xs
+        Left Z.NoNodeError -> peekZQueue zkQueue
+        Left zkerr -> throwZKError "peekZQueue" zkerr
     
 -- update
 updateZQueue :: ZookeeperQueue -> String -> C.ByteString -> Int -> IO (Bool)
-updateZQueue zkQueue znodeName value version = update `catch` handleZooError
-  where
-    update = do
-      Z.set (zqHandle zkQueue) (fullPath zkQueue znodeName) (Just value) version
-      return (True)
-    
-    handleZooError :: Z.ZooError -> IO (Bool)
-    handleZooError (Z.ErrBadVersion _) = return (False)
-    handleZooError (Z.ErrNoNode _) = return (False)
-    handleZooError e = throw e
+updateZQueue zkQueue znodeName value version = do
+  e <- Z.set (zqHandle zkQueue) (fullPath zkQueue znodeName) (Just value) (Just (fromIntegral version))
+  case e of
+    Right _stat -> return (True)
+    Left Z.BadVersionError -> return (False)
+    Left Z.NoNodeError -> return (False)
+    Left zkerr -> throwZKError "updateZQueue" zkerr
 
 -- delete
 deleteZQueue :: ZookeeperQueue -> String -> IO (Bool)
-deleteZQueue = deleteChild
+deleteZQueue zkQueue nodeName = do
+  let nodeName' = zqBasePath zkQueue ++ "/" ++ nodeName
+  e <- Z.delete (zqHandle zkQueue) nodeName' Nothing
+  case e of
+    Right () -> return (True)
+    Left zkerr -> throwZKError ("deleteZQueue(nodeName=" ++ nodeName' ++ ")") zkerr
 
 -- offer
 writeZQueue :: ZookeeperQueue -> C.ByteString -> Int -> IO (String)
@@ -130,8 +133,10 @@ writeZQueue zkQueue value prio = do
                 (zqBasePath zkQueue ++ "/" ++ (nodePrefix (zqNodeName zkQueue) prio))
                 (Just value)
                 (zqAcls zkQueue)
-                (Z.CreateMode False True)
-  return (r)
+                [Z.Sequence]
+  case r of
+    Right znode -> return znode
+    Left zkerr -> throwZKError "writeZQueue" zkerr
 
 -- destroy
 destroyZQueue :: ZookeeperQueue -> IO ()
@@ -141,17 +146,15 @@ destroyZQueue _zkQueue = return ()
 listZQueue :: ZookeeperQueue -> IO ([C.ByteString])
 listZQueue zkQueue = do
   results <- getChildren zkQueue
-  values <- forM (sortChildren results) (\x -> getItem x `catch` handleZooError)
+  values <- forM (sortChildren results) getItem
   return (catMaybes values)
   where
     getItem x = do
-      (value, _) <- Z.get (zqHandle zkQueue) (zqBasePath zkQueue ++ "/" ++ x) Z.NoWatch
-      return (value)
-
-    handleZooError :: Z.ZooError -> IO (Maybe a)
-    handleZooError zerr = case zerr of
-      Z.ErrNoNode _ -> return (Nothing)
-      e -> throwIO e
+      e <- Z.get (zqHandle zkQueue) (zqBasePath zkQueue ++ "/" ++ x) Nothing   
+      case e of
+        Right (mValue, stat) -> return (mValue)
+        Left Z.NoNodeError -> return (Nothing)
+        Left zkerr -> throwZKError "listZQueue" zkerr
 
 -- items
 itemsZQueue :: ZookeeperQueue -> IO ([String])
@@ -167,14 +170,12 @@ countZQueue zkQueue = do
 
 ----
 
-deleteChild :: ZookeeperQueue -> String -> IO (Bool)
-deleteChild zkQueue child = do { Z.delete (zqHandle zkQueue) (fullPath zkQueue child) (-1); return (True); }
-  `catch` (\(SomeException _e) -> return (False))
-
 getChildren :: ZookeeperQueue -> IO ([String])
 getChildren zkQueue = do
-  results <- Z.getChildren (zqHandle zkQueue) (zqBasePath zkQueue) Z.NoWatch
-  return (results)
+  e <- Z.getChildren (zqHandle zkQueue) (zqBasePath zkQueue) Nothing
+  case e of
+    Right results -> return (results)
+    Left zkerr -> throwZKError "getChildren" zkerr
 
 sortChildren :: [String] -> [String]
 sortChildren = sort . filter (isPrefixOf qnPrefix)
@@ -192,3 +193,5 @@ nodePrefix base prio = base ++ priorityPart' ++ "-"
                     ++ (take (3 - length priorityPart) $ repeat '0')
                     ++ priorityPart
 
+throwZKError :: String -> Z.ZKError -> IO a
+throwZKError func zkerr = throwIO $ SessionError (func ++ ": " ++ show zkerr)

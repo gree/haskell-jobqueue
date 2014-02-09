@@ -1,3 +1,5 @@
+-- Copyright (c) Gree, Inc. 2013
+-- License: MIT-style
 
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -18,8 +20,8 @@ import Network.JobQueue.Backend.Class
 main :: IO ()
 main = $(defaultMainGenerator)
 
-case_read_and_write1 :: Assertion
-case_read_and_write1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+case_write_and_read1 :: Assertion
+case_write_and_read1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
   q <- openQueue "read_and_write1"
   k <- writeQueue q (BS.pack "hoge") 0
   v <- readQueue q
@@ -28,10 +30,10 @@ case_read_and_write1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
 case_count1 :: Assertion
 case_count1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
   q <- openQueue "count1"
-  _ <- writeQueue q (BS.pack "hoge") 0
+  _ <- writeQueue q (BS.pack "hoge1") 0
   c1 <- countQueue q
   c1 @?= 1
-  _ <- writeQueue q (BS.pack "hoge") 0
+  _ <- writeQueue q (BS.pack "hoge2") 0
   c2 <- countQueue q
   c2 @?= 2
 

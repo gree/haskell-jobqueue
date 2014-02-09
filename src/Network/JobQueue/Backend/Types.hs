@@ -2,13 +2,20 @@
 -- License: MIT-style
 
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
-module Network.JobQueue.Backend.Types where
+module Network.JobQueue.Backend.Types (Backend(..), BackendError(..)) where
 
+import Control.Exception
 import Network.JobQueue.Backend.Class
+import Data.Typeable
 
 data Backend where
   Backend :: (BackendQueue q) => {
       bOpenQueue :: String -> IO q
     , bClose :: Backend -> IO ()
     } -> Backend
+
+data BackendError = SessionError String deriving (Show, Typeable)
+
+instance Exception BackendError

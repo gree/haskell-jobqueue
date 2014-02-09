@@ -39,7 +39,8 @@ Library
                  , split
                  , time
                  , data-default
-                 , zookeeper
+                 , stm                      >= 2.4
+                 , hzk                      >= 2.0.0
                  , attoparsec
                  , data-default
                  , HDBC

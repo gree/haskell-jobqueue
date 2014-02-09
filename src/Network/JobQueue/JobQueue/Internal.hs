@@ -7,7 +7,7 @@ module Network.JobQueue.JobQueue.Internal where
 
 import Control.Applicative
 import qualified Data.ByteString.Char8 as C
-import qualified Zookeeper as Z
+-- import qualified Zookeeper as Z
 import Control.Exception
 import Data.Time.Clock
 import System.Log.Logger
@@ -21,6 +21,7 @@ import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.Backend.Class
+import Network.JobQueue.Backend.Types
 
 type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
 type AfterExecuteHandleFn a = Job a -> IO ()
@@ -136,9 +137,8 @@ updateJob :: (Unit a) => JobQueue e a -> String -> Job a -> Int -> IO (Bool)
 updateJob JobQueue { jqBackendQueue = bq } nodeName job version = do
   updateQueue bq nodeName (pack job) version `catch` handleError
   where
-    handleError :: Z.ZooError -> IO (Bool)
-    handleError _e = do
-      return (False)
+    handleError :: BackendError -> IO (Bool)
+    handleError _ = return (False)
 
 pack :: (Unit a) => Job a -> C.ByteString
 pack = C.pack . show
