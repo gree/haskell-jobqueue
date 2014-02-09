@@ -33,13 +33,10 @@ Library
                  , mtl
                  , network                  >= 2.3.2
                  , hslogger
-                 , resourcet                >= 0.4 && < 0.5
                  , text
                  , bytestring
-                 , unix
                  , containers
                  , split
-                 , stm                      >= 2.4
                  , time
                  , data-default
                  , zookeeper

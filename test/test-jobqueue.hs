@@ -1,4 +1,5 @@
 
+import Test.HUnit
 import qualified Data.ByteString.Char8 as BS
 import Network.JobQueue.Backend.Sqlite3
 import Network.JobQueue.Backend.Types
@@ -12,7 +13,7 @@ main = do
 
 doTest (Backend { bOpenQueue = openQueue }) = do
   q <- openQueue "test"
-  _ <- writeQueue q (BS.pack "hoge")
+  _ <- writeQueue q (BS.pack "hoge") 0
   v <- readQueue q
   print v
   
