@@ -116,6 +116,22 @@ Test-Suite test-jobqueue
   Build-depends:   base
                  , bytestring
                  , network >= 2.3.2
+                 , QuickCheck == 2.5.1.1
+                 , HUnit
+                 , test-framework
+                 , test-framework-th
+                 , test-framework-hunit
+                 , test-framework-quickcheck2
+                 , jobqueue
+  Type:            exitcode-stdio-1.0
+  Hs-source-dirs:  test
+  Main-is:         test-jobqueue.hs
+
+Test-Suite test-jobqueue-backend
+  Ghc-Options:     -threaded -O2 -Wall
+  Build-depends:   base
+                 , bytestring
+                 , network >= 2.3.2
                  , split
                  , directory
                  , QuickCheck == 2.5.1.1
@@ -127,4 +143,4 @@ Test-Suite test-jobqueue
                  , jobqueue
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test
-  Main-is:         test-jobqueue.hs
+  Main-is:         test-jobqueue-backend.hs
