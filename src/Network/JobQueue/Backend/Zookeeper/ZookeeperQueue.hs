@@ -176,7 +176,7 @@ itemsZQueue zkQueue = do
 -- count
 countZQueue :: ZookeeperQueue -> IO (Int)
 countZQueue zkQueue = do
-  items <- itemsZQueue zkQueue
+  items <- getChildren zkQueue
   return (length items)
 
 ----
