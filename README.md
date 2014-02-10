@@ -4,22 +4,13 @@ Haskell JobQueue
 
 JobQueue is a simple job queue library based on prioritized FCFS scheduling.
 
-Prerequisites
--------------
-
-### haskell-zookeeper-client package
-
-haskell-zookeeper-client package is not registered in the Hackage database, so please download it from https://github.com/motus/haskell-zookeeper-client.git and install it beforehand.
-
-    > cd haskell-zookeeper-client/
-    > cabal install
-
 How to install
 --------------
 
 Execute the cabal install command and the library and example programs will be placed into your .cabal directory.
 
     > cd haskell-jobqueue/
+    > cabal install --only-dependencies --extra-include-dirs=/usr/local/include/zookeeper # if you use brew on Mac OSX
     > cabal install --fsample
 
 How to use
