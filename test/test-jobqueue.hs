@@ -22,16 +22,25 @@ import Network.JobQueue.Backend.Class
 main :: IO ()
 main = $(defaultMainGenerator)
 
-case_write_and_read1 :: Assertion
-case_write_and_read1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
-  q <- openQueue "read_and_write1"
+case_peek_1 :: Assertion
+case_peek_1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+  q <- openQueue "peek_1"
+  k <- writeQueue q (BS.pack "hoge") 0
+  Just (bs, name, idName, version) <- peekQueue q
+  _ <- deleteQueue q name
+  c <- countQueue q
+  c @?= 0
+
+case_write_and_read_1 :: Assertion
+case_write_and_read_1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+  q <- openQueue "read_and_write_1"
   k <- writeQueue q (BS.pack "hoge") 0
   v <- readQueue q
   v @?= Just (BS.pack "hoge", k)
 
-case_count1 :: Assertion
-case_count1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
-  q <- openQueue "count1"
+case_count_1 :: Assertion
+case_count_1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+  q <- openQueue "count_1"
   _ <- writeQueue q (BS.pack "hoge1") 0
   c1 <- countQueue q
   c1 @?= 1
@@ -42,9 +51,9 @@ case_count1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
   _ <- readQueue q
   return ()
 
-case_items1 :: Assertion
-case_items1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
-  q <- openQueue "items1"
+case_items_1 :: Assertion
+case_items_1 = withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+  q <- openQueue "items_1"
   k1 <- writeQueue q (BS.pack "hoge1") 0
   e1 <- itemsQueue q
   e1 @?= [k1]
