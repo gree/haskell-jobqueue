@@ -54,7 +54,7 @@ newSession dummyLocator backend = Session False dummyLocator backend
 {- | Close a queue session if needed
 -}
 closeSession :: Session -> IO ()
-closeSession (Session isOwner _locator backend@(Backend { bClose = c })) = when isOwner $ c backend
+closeSession (Session isOwner _locator backend) = when isOwner $ bClose backend
 
 {- | Open a job queue with a session.
 -}

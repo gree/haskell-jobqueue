@@ -6,7 +6,6 @@ module Network.JobQueue.Backend.Zookeeper (
   , newZookeeperBackend
   ) where
 
-import Data.List
 import qualified Database.Zookeeper as Z
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -32,7 +31,7 @@ openZookeeperBackend endpoint = do
         Nothing -> return ()
   return $ Backend {
       bOpenQueue = openQueue zvar
-    , bClose = \_ -> atomically $ writeTVar zvar Nothing
+    , bClose = atomically $ writeTVar zvar Nothing
     }
   where
     openQueue :: TVar (Maybe Z.Zookeeper) -> String -> IO (ZookeeperQueue)
@@ -50,7 +49,10 @@ openZookeeperBackend endpoint = do
 newZookeeperBackend :: Z.Zookeeper -> Backend
 newZookeeperBackend zh = Backend {
       bOpenQueue = \queueName -> initZQueue zh (basePath queueName) Z.OpenAclUnsafe
-    , bClose = \_ -> return ()
+      , bClose = return ()
     }
 
-basePath queueName = if "/" `isPrefixOf` queueName then queueName else "/" ++ queueName
+basePath :: String -> String
+basePath queueName = case queueName of
+  '/':_ -> queueName
+  _ -> '/':queueName

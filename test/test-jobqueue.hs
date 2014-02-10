@@ -71,10 +71,10 @@ withBackend act = do
   backend <- lookupEnv "JOBQUEUE_TEST_BACKEND"
   case backend of
     Just "zookeeper" -> do
-      bracket (openZookeeperBackend "localhost:2181") (\b -> bClose b b) act
+      bracket (openZookeeperBackend "localhost:2181") bClose act
     _ -> do
       let testFile = "test.sqlite3"
-      r <- bracket (openSqlite3Backend testFile) (\b -> bClose b b) act
+      r <- bracket (openSqlite3Backend testFile) bClose act
       removeIfExists testFile
       return r
 

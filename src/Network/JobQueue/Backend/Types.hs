@@ -13,7 +13,7 @@ import Data.Typeable
 data Backend where
   Backend :: (BackendQueue q) => {
       bOpenQueue :: String -> IO q
-    , bClose :: Backend -> IO ()
+    , bClose :: IO ()
     } -> Backend
 
 data BackendError = SessionError String deriving (Show, Typeable)

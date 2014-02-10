@@ -28,13 +28,13 @@ openSqlite3Backend filePath = do
       bOpenQueue = \queueName -> do
          _ <- run conn ("CREATE TABLE IF NOT EXISTS " ++ queueName ++ " (key INTEGER PRIMARY KEY AUTOINCREMENT, prio INTEGER, value TEXT, version INTEGER)") []
          return (Sqlite3Queue conn queueName)
-    , bClose = \_ -> disconnect conn
+    , bClose = disconnect conn
     }
 
 newSqlite3Backend :: Connection -> Backend
 newSqlite3Backend conn = Backend {
       bOpenQueue = \queueName -> return (Sqlite3Queue conn queueName)
-    , bClose = \_ -> return ()
+    , bClose = return ()
     }
 
 readDBQueue :: Sqlite3Queue -> IO (Maybe (BS.ByteString, String))
