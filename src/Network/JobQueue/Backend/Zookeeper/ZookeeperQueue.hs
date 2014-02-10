@@ -53,18 +53,13 @@ minPrio = -999
 qnPrefix :: String
 qnPrefix = "qn-"
 
-----
+---- init
 
 initZQueue :: Z.Zookeeper -> String -> Z.AclList -> IO (ZookeeperQueue)
 initZQueue z path acls = do
-  e <- Z.exists z path Nothing
+  e <- createZnodeRecursively z path Nothing acls []
   case e of
-    Right _stat -> return ()
-    Left Z.NoNodeError -> do
-      e' <- Z.create z path Nothing acls []
-      case e' of
-        Right _ -> return ()
-        Left zkerr -> throwZKError "initZQueue" zkerr
+    Right _ -> return ()
     Left zkerr -> throwZKError "initZQueue" zkerr
   return (ZookeeperQueue z path qnPrefix acls)
 
@@ -163,7 +158,7 @@ listZQueue zkQueue = do
     getItem x = do
       e <- Z.get (zqHandle zkQueue) (zqBasePath zkQueue ++ "/" ++ x) Nothing   
       case e of
-        Right (mValue, stat) -> return (mValue)
+        Right (mValue, _stat) -> return (mValue)
         Left Z.NoNodeError -> return (Nothing)
         Left zkerr -> throwZKError "listZQueue" zkerr
 
@@ -206,3 +201,27 @@ nodePrefix base prio = base ++ priorityPart' ++ "-"
 
 throwZKError :: String -> Z.ZKError -> IO a
 throwZKError func zkerr = throwIO $ SessionError (func ++ ": " ++ show zkerr)
+
+createZnodeRecursively :: Z.Zookeeper -> String -> Maybe C.ByteString -> Z.AclList -> [Z.CreateFlag] -> IO (Either Z.ZKError String)
+createZnodeRecursively z path mData acls flags = do
+  createZnodeRecursively' z (reverse $ splitOn "/" path) mData acls flags
+
+createZnodeRecursively' :: Z.Zookeeper -> [String] -> Maybe C.ByteString -> Z.AclList -> [Z.CreateFlag] -> IO (Either Z.ZKError String)
+createZnodeRecursively' _ [] _ _ _ = return $ Right "/"
+createZnodeRecursively' _ ("":[]) _ _ _ = return $ Right "/"
+createZnodeRecursively' z revZnodes value acls cflags = do
+  let path = intercalate "/" (reverse revZnodes)
+  eStats <- Z.exists z path Nothing
+  case eStats of
+    Right _stat -> return $ Right path
+    Left Z.NoNodeError -> do
+      e <- createZnodeRecursively' z (tail revZnodes) Nothing acls cflags
+      case e of
+        Right _ -> do
+          r <- Z.create z path value acls cflags
+          return $ case r of
+            Right newPath -> Right newPath
+            Left zkerr -> Left zkerr
+        Left zkerr -> return (Left zkerr)
+    Left zkerr -> return (Left zkerr)
+
