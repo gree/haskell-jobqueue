@@ -111,6 +111,21 @@ Executable jobqueue-sample-priority
   else
     Buildable: False
 
+Executable jobqueue-sample-suspend
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , bytestring
+                 , containers
+                 , data-default
+  Hs-source-dirs:  sample
+  Main-is:         suspend.hs
+  Extensions:      DeriveDataTypeable
+  if flag(sample)
+    Buildable: True
+  else
+    Buildable: False
+
 Test-Suite test-jobqueue
   Ghc-Options:     -threaded -O2 -Wall
   Build-depends:   base

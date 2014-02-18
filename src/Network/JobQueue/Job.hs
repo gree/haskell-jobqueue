@@ -2,15 +2,19 @@
 -- License: MIT-style
 
 module Network.JobQueue.Job (
-    Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority)
+    Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority, StopTheWorld)
   , JobState(..)
   , process
   , createJob
   , createOnTimeJob
+  , createStopTheWorld
+  , createOnTimeStopTheWorld
   , printJob
   , module Network.JobQueue.Types
   , module Network.JobQueue.Action
   ) where
+
+--module Network.JobQueue.Job where
 
 import Control.Monad.State hiding (state)
 
@@ -51,8 +55,11 @@ data Job a =
     , jobOnTime   :: UTCTime
     , jobId       :: Int
     , jobGroup    :: Int
-    , jobPriority :: Int
-  } deriving (Show, Read)
+    , jobPriority :: Int }
+  | StopTheWorld {
+      jobCTime    :: UTCTime
+    , jobOnTime   :: UTCTime }
+  deriving (Show, Read)
 
 --------------------------------
 
@@ -75,6 +82,16 @@ createOnTimeJob :: (Unit a) => JobState -> UTCTime -> a -> IO (Job a)
 createOnTimeJob state ontime unit = do
   ctime <- getCurrentTime
   return (Job state unit ctime ontime (defaultId) (defaultGroup) (getPriority unit))
+
+createStopTheWorld :: IO (Job a)
+createStopTheWorld = do
+  ctime <- getCurrentTime
+  return (StopTheWorld ctime ctime)
+
+createOnTimeStopTheWorld :: UTCTime -> IO (Job a)
+createOnTimeStopTheWorld ontime = do
+  ctime <- getCurrentTime
+  return (StopTheWorld ctime ontime)
 
 printJob :: (Unit a) => Job a -> IO ()
 printJob job = case job of
