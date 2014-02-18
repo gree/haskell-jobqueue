@@ -61,7 +61,7 @@ data ActionForJob a = (Unit a) => Execute (Job a) | Delete | Skip
 actionForJob :: Unit a => Job a -> String -> ActionForJob a
 actionForJob job idName = do
   case job of
-    StopTheWorld _ _ -> Execute job
+    StopTheWorld -> Execute job
     _ -> case jobState job of
            Initialized -> case (fmap fst . listToMaybe . reads) idName of
              Just ident -> Execute $ job { jobState = Runnable, jobId = ident }

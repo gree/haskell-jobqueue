@@ -7,8 +7,6 @@ module Network.JobQueue.Job (
   , process
   , createJob
   , createOnTimeJob
-  , createStopTheWorld
-  , createOnTimeStopTheWorld
   , printJob
   , module Network.JobQueue.Types
   , module Network.JobQueue.Action
@@ -56,9 +54,7 @@ data Job a =
     , jobId       :: Int
     , jobGroup    :: Int
     , jobPriority :: Int }
-  | StopTheWorld {
-      jobCTime    :: UTCTime
-    , jobOnTime   :: UTCTime }
+  | StopTheWorld
   deriving (Show, Read)
 
 --------------------------------
@@ -82,16 +78,6 @@ createOnTimeJob :: (Unit a) => JobState -> UTCTime -> a -> IO (Job a)
 createOnTimeJob state ontime unit = do
   ctime <- getCurrentTime
   return (Job state unit ctime ontime (defaultId) (defaultGroup) (getPriority unit))
-
-createStopTheWorld :: IO (Job a)
-createStopTheWorld = do
-  ctime <- getCurrentTime
-  return (StopTheWorld ctime ctime)
-
-createOnTimeStopTheWorld :: UTCTime -> IO (Job a)
-createOnTimeStopTheWorld ontime = do
-  ctime <- getCurrentTime
-  return (StopTheWorld ctime ontime)
 
 printJob :: (Unit a) => Job a -> IO ()
 printJob job = case job of

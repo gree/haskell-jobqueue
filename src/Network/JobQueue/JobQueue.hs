@@ -90,9 +90,7 @@ resumeJobQueue JobQueue { jqBackendQueue = bq } id = void $ deleteQueue bq id
 {- | Suspend a job queue
 -}
 suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (String)
-suspendJobQueue JobQueue { jqBackendQueue = bq } = do
-  job <- createStopTheWorld
-  writeQueue bq (pack (job :: Job a)) (-1)
+suspendJobQueue JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
 
 {- | Execute an action of the head job in a job queue.
 -}
@@ -101,7 +99,7 @@ executeJob jobqueue env = do
   r <- peekJob jobqueue
   case r of
     Just (job, nodeName, idName, version) -> case actionForJob job idName of
-      Execute job'@(StopTheWorld _ _) -> do
+      Execute job'@(StopTheWorld) -> do
         threadDelay 1000000
         return ()
       Execute job' -> do
