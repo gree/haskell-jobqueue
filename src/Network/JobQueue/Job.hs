@@ -43,7 +43,7 @@ Job consists of /State/, /Unit/, /CTime/, /OnTime/, /Id/, /Group/, and /Priority
 - Priority - the priority of this job
 
 -}
-data (Unit a) => Job a =
+data Job a =
     Job {
       jobState    :: JobState
     , jobUnit     :: a
