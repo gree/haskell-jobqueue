@@ -2,7 +2,7 @@
 -- License: MIT-style
 
 module Network.JobQueue.Job (
-    Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority)
+    Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority, StopTheWorld)
   , JobState(..)
   , process
   , createJob
@@ -11,6 +11,8 @@ module Network.JobQueue.Job (
   , module Network.JobQueue.Types
   , module Network.JobQueue.Action
   ) where
+
+--module Network.JobQueue.Job where
 
 import Control.Monad.State hiding (state)
 
@@ -51,8 +53,9 @@ data Job a =
     , jobOnTime   :: UTCTime
     , jobId       :: Int
     , jobGroup    :: Int
-    , jobPriority :: Int
-  } deriving (Show, Read)
+    , jobPriority :: Int }
+  | StopTheWorld
+  deriving (Show, Read)
 
 --------------------------------
 

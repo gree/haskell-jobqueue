@@ -1,6 +1,8 @@
 -- Copyright (c) Gree, Inc. 2013
 -- License: MIT-style
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Network.JobQueue.JobQueue (
     JobQueue
   , FailureHandleFn
@@ -13,12 +15,15 @@ module Network.JobQueue.JobQueue (
   , openJobQueue
   , closeJobQueue
   , countJobQueue
+  , resumeJobQueue
+  , suspendJobQueue
   , executeJob
   , scheduleJob
   , deleteJob
   ) where
 
 import Control.Applicative
+import Control.Concurrent
 import Control.Monad
 
 import Network.JobQueue.Class
@@ -77,6 +82,16 @@ closeJobQueue JobQueue { jqBackendQueue = bq } = closeQueue bq
 countJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Int)
 countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
+{- | Resume a job queue
+-}
+resumeJobQueue :: (Env e, Unit a) => JobQueue e a -> String -> IO ()
+resumeJobQueue JobQueue { jqBackendQueue = bq } id = void $ deleteQueue bq id
+
+{- | Suspend a job queue
+-}
+suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (String)
+suspendJobQueue JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
+
 {- | Execute an action of the head job in a job queue.
 -}
 executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
@@ -84,6 +99,9 @@ executeJob jobqueue env = do
   r <- peekJob jobqueue
   case r of
     Just (job, nodeName, idName, version) -> case actionForJob job idName of
+      Execute job'@(StopTheWorld) -> do
+        threadDelay 1000000
+        return ()
       Execute job' -> do
         isUpdated <- updateJob jobqueue nodeName job' version
         when (isUpdated && jobState job == Runnable && jobState job' == Running) $ do
