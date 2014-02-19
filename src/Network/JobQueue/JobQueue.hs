@@ -84,13 +84,27 @@ countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 
 {- | Resume a job queue
 -}
-resumeJobQueue :: (Env e, Unit a) => JobQueue e a -> String -> IO ()
-resumeJobQueue JobQueue { jqBackendQueue = bq } id = void $ deleteQueue bq id
+resumeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Bool)
+resumeJobQueue jobqueue = do
+  r <- peekJob jobqueue
+  case r of
+    Just (job, nodeName, idName, version) -> case actionForJob job idName of
+      Execute job'@(StopTheWorld) -> resume jobqueue nodeName
+      _ -> return True
+    _ -> return True
+  where resume JobQueue { jqBackendQueue = bq } key = deleteQueue bq key
 
 {- | Suspend a job queue
 -}
-suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (String)
-suspendJobQueue JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
+suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (Bool)
+suspendJobQueue jobqueue = do
+  r <- peekJob jobqueue
+  case r of
+    Just (job, nodeName, idName, version) -> case actionForJob job idName of
+      Execute job'@(StopTheWorld) -> return False
+      _ -> do suspend jobqueue; return True
+    _ -> do suspend jobqueue; return True
+  where suspend JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
 
 {- | Execute an action of the head job in a job queue.
 -}
