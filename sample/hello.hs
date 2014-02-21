@@ -1,4 +1,6 @@
 
+{-# LANGUAGE LambdaCase #-}
+
 import Control.Monad
 import System.Environment hiding (getEnv)
 import Network.JobQueue
@@ -22,15 +24,16 @@ main = do
   args <- getArgs
   case args of
     (loc:name:args') -> do
-      let withJobQueue = buildJobQueue loc name $ do
-            process $ \WorldStep -> commitIO (putStrLn "world") >> fin
-            process $ \HelloStep -> do
+      let withJobQueue = buildJobQueue loc name $ process $ \case
+            WorldStep -> commitIO (putStrLn "world") >> fin
+            HelloStep -> do
               env <- getEnv
               commitIO (putStr $ (jeHello env) ++ ", ")
               next WorldStep
       case args' of
         ("run":[]) -> withJobQueue $ loop (JobEnv "hello")
         ("init":[]) -> withJobQueue $ \jq -> scheduleJob jq HelloStep
+        [] -> putStrLn $ "command not specified."
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
     _ -> return ()
   where

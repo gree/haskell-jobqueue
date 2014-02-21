@@ -1,4 +1,6 @@
 
+{-# LANGUAGE LambdaCase #-}
+
 import Control.Monad
 import Control.Monad.IO.Class
 import System.Environment hiding (getEnv)
@@ -26,9 +28,9 @@ main = do
   args <- getArgs
   case args of
     (loc:name:args') -> do
-      let withJobQueue = buildJobQueue loc name $ do
-            process $ \InitialStep -> next $ ComputationStep 0 1 []
-            process $ \(ComputationStep a b r) -> do
+      let withJobQueue = buildJobQueue loc name $ process $ \case
+            InitialStep -> next $ ComputationStep 0 1 []
+            (ComputationStep a b r) -> do
               env <- getEnv
               if length r > jeLimit env
                 then liftIO (print (reverse r)) >> fin
@@ -36,6 +38,7 @@ main = do
       case args' of
         ("run":[]) -> withJobQueue $ loop (JobEnv 100)
         ("init":[]) -> withJobQueue $ \jq -> scheduleJob jq InitialStep
+        [] -> putStrLn $ "command not specified."
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
     _ -> return ()
   where

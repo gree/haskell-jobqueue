@@ -1,4 +1,6 @@
 
+{-# LANGUAGE LambdaCase #-}
+
 import Control.Monad
 import System.Environment hiding (getEnv)
 import Network.JobQueue
@@ -26,15 +28,20 @@ main = do
   case args of
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ do
-            process $ \Priority0 -> commitIO (putStrLn "0") >> fin
-            process $ \(Priority1 ttl) -> commitIO (putStrLn "1") >> if ttl > 0 then fork $ Priority1 (ttl-1) else fin
-            process $ \(Priority1' ttl) -> commitIO (putStrLn "1'") >> if ttl > 0 then fork $ Priority1' (ttl-1) else fin
-            process $ \Priority2 -> commitIO (putStrLn "2") >> fin
-            process $ \Failed    -> commitIO (putStrLn "failed.") >> fin
+            process $ \case
+              Priority0 -> commitIO (putStrLn "0") >> fin
+              (Priority1 ttl) -> commitIO (putStrLn "1") >> if ttl > 0 then fork $ Priority1 (ttl-1) else fin
+              (Priority1' ttl) -> commitIO (putStrLn "1'") >> if ttl > 0 then fork $ Priority1' (ttl-1) else fin
+              _ -> none
+            process $ \case
+              Priority2 -> commitIO (putStrLn "2") >> fin
+              Failed    -> commitIO (putStrLn "failed.") >> fin
+              _ -> none
       case args' of
         ("run":[]) -> withJobQueue $ loop (JobEnv)
         ("init":[]) -> withJobQueue $ \jq -> mapM_ (scheduleJob jq) [Priority1 10, Priority1' 10, Priority2, Priority0]
         ("show":[]) -> withJobQueue $ loop (JobEnv)
+        [] -> putStrLn $ "command not specified."
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
     _ -> return ()
   where
