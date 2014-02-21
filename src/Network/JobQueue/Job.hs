@@ -85,6 +85,7 @@ printJob job = case job of
     noticeM "job" $ show (jobUnit job)
     hPutStrLn stdout $ desc (jobUnit job)
     hFlush stdout
+  StopTheWorld -> return ()
 
 ---------------------------------------------------------------- PRIVATE
 

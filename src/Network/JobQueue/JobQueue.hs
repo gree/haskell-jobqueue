@@ -88,11 +88,12 @@ resumeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Bool)
 resumeJobQueue jobqueue = do
   r <- peekJob jobqueue
   case r of
-    Just (job, nodeName, idName, version) -> case actionForJob job idName of
-      Execute job'@(StopTheWorld) -> resume jobqueue nodeName
+    Just (job, nodeName, idName, _version) -> case actionForJob job idName of
+      Execute StopTheWorld -> resume jobqueue nodeName
       _ -> return True
     _ -> return True
-  where resume JobQueue { jqBackendQueue = bq } key = deleteQueue bq key
+  where
+    resume JobQueue { jqBackendQueue = bq } key = deleteQueue bq key
 
 {- | Suspend a job queue
 -}
@@ -100,11 +101,12 @@ suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (Bo
 suspendJobQueue jobqueue = do
   r <- peekJob jobqueue
   case r of
-    Just (job, nodeName, idName, version) -> case actionForJob job idName of
-      Execute job'@(StopTheWorld) -> return False
-      _ -> do suspend jobqueue; return True
-    _ -> do suspend jobqueue; return True
-  where suspend JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
+    Just (job, _nodeName, idName, _version) -> case actionForJob job idName of
+      Execute StopTheWorld -> return False
+      _ -> suspend jobqueue >> return True
+    _ -> suspend jobqueue >> return True
+  where
+    suspend JobQueue { jqBackendQueue = bq } = writeQueue bq (pack (StopTheWorld :: Job a)) (-1)
 
 {- | Execute an action of the head job in a job queue.
 -}
@@ -113,7 +115,7 @@ executeJob jobqueue env = do
   r <- peekJob jobqueue
   case r of
     Just (job, nodeName, idName, version) -> case actionForJob job idName of
-      Execute job'@(StopTheWorld) -> do
+      Execute StopTheWorld -> do
         threadDelay 1000000
         return ()
       Execute job' -> do
