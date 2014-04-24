@@ -30,7 +30,7 @@ class (Show a) => Desc a where
 
 {- | Unit class
 -}
-class (Read a, Show a, Desc a) => Unit a where
+class (Read a, Show a, Desc a, Eq a) => Unit a where
   {- | Define the priority of a unit.
   -}
   getPriority :: a -> Int

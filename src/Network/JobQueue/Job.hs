@@ -55,7 +55,7 @@ data Job a =
     , jobGroup    :: Int
     , jobPriority :: Int }
   | StopTheWorld
-  deriving (Show, Read)
+  deriving (Show, Read, Eq)
 
 --------------------------------
 
