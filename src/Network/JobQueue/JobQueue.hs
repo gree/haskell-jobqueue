@@ -20,11 +20,15 @@ module Network.JobQueue.JobQueue (
   , executeJob
   , scheduleJob
   , deleteJob
+  , clearJobs
+  , peekJob
   ) where
 
 import Control.Applicative
 import Control.Concurrent
 import Control.Monad
+import qualified Data.ByteString.Char8 as BS
+import Data.Maybe
 
 import Network.JobQueue.Class
 import Network.JobQueue.Types
@@ -86,7 +90,7 @@ countJobQueue JobQueue { jqBackendQueue = bq } = countQueue bq
 -}
 resumeJobQueue :: (Env e, Unit a) => JobQueue e a -> IO (Bool)
 resumeJobQueue jobqueue = do
-  r <- peekJob jobqueue
+  r <- peekJob' jobqueue
   case r of
     Just (job, nodeName, idName, _version) -> case actionForJob job idName of
       Execute StopTheWorld -> resume jobqueue nodeName
@@ -99,7 +103,7 @@ resumeJobQueue jobqueue = do
 -}
 suspendJobQueue :: forall e. forall a. (Env e, Unit a) => JobQueue e a -> IO (Bool)
 suspendJobQueue jobqueue = do
-  r <- peekJob jobqueue
+  r <- peekJob' jobqueue
   case r of
     Just (job, _nodeName, idName, _version) -> case actionForJob job idName of
       Execute StopTheWorld -> return False
@@ -112,7 +116,7 @@ suspendJobQueue jobqueue = do
 -}
 executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
 executeJob jobqueue env = do
-  r <- peekJob jobqueue
+  r <- peekJob' jobqueue
   case r of
     Just (job, nodeName, idName, version) -> case actionForJob job idName of
       Execute StopTheWorld -> do
@@ -144,8 +148,34 @@ scheduleJob JobQueue { jqBackendQueue = bq } ju = do
 deleteJob :: (Unit a)
              => JobQueue e a -- ^ a job queue
              -> String       -- ^ a job identifier
-             -> IO (Bool)
+             -> IO Bool
 deleteJob JobQueue { jqBackendQueue = bq } nodeName = deleteQueue bq nodeName
+
+{- | Clear all jobs from a job queue.
+-}
+clearJobs :: (Unit a)
+             => JobQueue e a -- ^ a job queue
+             -> IO [(String, Job a)]
+clearJobs JobQueue { jqBackendQueue = bq } = loop []
+  where
+    loop dequeued = do
+      obj <- readQueue bq
+      case obj of
+        Nothing -> return dequeued
+        Just (bs, nodeName) -> case (fmap fst . listToMaybe . reads) $ BS.unpack bs of
+          Nothing -> return dequeued
+          Just job -> loop ((nodeName, job):dequeued)
+
+{- | Peek a job form a job queue.
+-}
+peekJob :: (Unit a)
+           => JobQueue e a -- ^ a job queue
+           -> IO (Maybe (Job a))
+peekJob jobqueue = do
+  mjob <- peekJob' jobqueue
+  return $ case mjob of
+    Just (job, _nodeName, _idName, _version) -> Just job
+    Nothing -> Nothing
 
 ---------------------------------------------------------------- PRIVATE
 

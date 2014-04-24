@@ -6,8 +6,7 @@
 module Network.JobQueue.JobQueue.Internal where
 
 import Control.Applicative
-import qualified Data.ByteString.Char8 as C
--- import qualified Zookeeper as Z
+import qualified Data.ByteString.Char8 as BS
 import Control.Exception
 import Data.Time.Clock
 import System.Log.Logger
@@ -71,13 +70,13 @@ actionForJob job idName = do
            Aborted -> Skip
            Finished -> Delete
 
-peekJob :: (Unit a) => JobQueue e a -> IO (Maybe (Job a, String, String, Int))
-peekJob JobQueue { jqBackendQueue = bq } = do
+peekJob' :: (Unit a) => JobQueue e a -> IO (Maybe (Job a, String, String, Int))
+peekJob' JobQueue { jqBackendQueue = bq } = do
   obj <- peekQueue bq
   case obj of
     Nothing -> return (Nothing)
     Just (value, nodeName, idName, version) -> do
-      case (fmap fst . listToMaybe . reads) $ C.unpack value of
+      case (fmap fst . listToMaybe . reads) $ BS.unpack value of
         Nothing -> return (Nothing)
         Just job -> return (Just (job, nodeName, idName, version))
 
@@ -143,6 +142,6 @@ updateJob JobQueue { jqBackendQueue = bq } nodeName job version = do
     handleError :: BackendError -> IO (Bool)
     handleError _ = return (False)
 
-pack :: (Unit a) => Job a -> C.ByteString
-pack = C.pack . show
+pack :: (Unit a) => Job a -> BS.ByteString
+pack = BS.pack . show
 
