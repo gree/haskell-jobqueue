@@ -10,6 +10,7 @@ module Network.JobQueue.Action (
   , param
   , result
   , next
+  , orNext
   , fin
   , none
   , fork
@@ -131,11 +132,20 @@ forkInTime tDiff ju = do
      After the execution of the action the job being processed will be
      moved to the given state. The next action will be invoked immediately
      and can continue to work without being interrupted by another job.
+     NOTE: This overrides the next state if it is already set.
 -}
 next :: (Env e, Unit a)
         => a              -- ^ the next state
         -> ActionM e a ()
 next ju = modify $ \s -> Just $ setNextJob ju $ fromMaybe def s
+
+{- | Move to the next state immediately.
+     This is different from "next" function because this doesn't override it.
+-}
+orNext :: (Env e, Unit a)
+         => a              -- ^ the next state
+         -> ActionM e a ()
+orNext ju = modify $ \s -> Just $ setNextJobIfEmpty ju $ fromMaybe def s
 
 {- | Finish a job.
 -}

@@ -97,6 +97,7 @@ module Network.JobQueue (
   , fin
   , none
   , next
+  , orNext
   , fork
   , forkInTime
   , forkOnTime

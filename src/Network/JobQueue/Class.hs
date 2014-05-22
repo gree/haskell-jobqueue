@@ -1,9 +1,13 @@
 -- Copyright (c) Gree, Inc. 2013
 -- License: MIT-style
 
+{-# LANGUAGE DeriveDataTypeable #-}
+
 {- | Class definitions
 -}
 module Network.JobQueue.Class where
+
+import Data.Typeable
 
 {- | Environment class
 -}

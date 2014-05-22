@@ -1,3 +1,6 @@
+-- Copyright (c) Gree, Inc. 2013
+-- License: MIT-style
+
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -15,6 +18,7 @@ module Network.JobQueue.Types (
   , JobResult
   , Alert(..)
   , setNextJob
+  , setNextJobIfEmpty
   , addForkJob
   , runS
   , runAM
@@ -50,8 +54,12 @@ instance (Unit a) => Default (JobResult a) where
   def = Right $ Next Nothing []
 
 setNextJob :: (Unit a) => a -> (JobResult a) -> (JobResult a)
-setNextJob x (Right next@(Next _ju _xs)) = Right next { nextJob = Just x }
+setNextJob x (Right next@(Next _ _xs)) = Right next { nextJob = Just x }
 setNextJob _ jr@(Left _) = jr
+
+setNextJobIfEmpty :: (Unit a) => a -> (JobResult a) -> (JobResult a)
+setNextJobIfEmpty x jr@(Right next@(Next mju _xs)) = maybe (Right next { nextJob = Just x }) (const jr) mju
+setNextJobIfEmpty _ jr@(Left _) = jr
 
 addForkJob :: (Unit a) => (a, Maybe UTCTime) -> (JobResult a) -> (JobResult a)
 addForkJob (x, mt) (Right next@(Next _ju xs)) = Right next { nextForks = ((x, mt):xs) }
