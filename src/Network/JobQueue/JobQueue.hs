@@ -73,8 +73,8 @@ openJobQueue :: (Env e, Unit a)
                 -> Settings a  -- ^ queue settings
                 -> JobM e a () -- ^ a state machine definition
                 -> IO (JobQueue e a)
-openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn) jobm = do
-  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn
+openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq })) name (Settings fhFn aeFn logFn) jobm = do
+  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn <*> pure logFn
 
 {- | Close a job queue.
 -}

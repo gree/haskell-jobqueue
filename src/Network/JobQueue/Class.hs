@@ -1,13 +1,9 @@
 -- Copyright (c) Gree, Inc. 2013
 -- License: MIT-style
 
-{-# LANGUAGE DeriveDataTypeable #-}
-
 {- | Class definitions
 -}
 module Network.JobQueue.Class where
-
-import Data.Typeable
 
 {- | Environment class
 -}
@@ -45,3 +41,7 @@ class (Read a, Show a, Desc a, Eq a) => Unit a where
   getRecovery :: a -> a
   getRecovery ju = ju
 
+  {- | Define the logging necessity of a unit.
+  -}
+  toBeLogged :: a -> Bool
+  toBeLogged _ju = False
