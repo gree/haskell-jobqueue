@@ -62,6 +62,7 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
   if jobOnTime currentJob < currentTime
     then do
       noticeM "jobqueue" (show currentJob)
+      when (toBeLogged $ jobUnit currentJob) $ (jqLoggingHandleFn jqueue) currentJob
       runActionState actionState env (jobUnit currentJob) `catch` handleSome
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
