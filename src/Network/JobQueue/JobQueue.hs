@@ -37,6 +37,7 @@ import Network.JobQueue.Job
 import Network.JobQueue.Backend
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
+import Network.JobQueue.Settings
 
 import Network.JobQueue.JobQueue.Internal
 

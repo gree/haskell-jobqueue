@@ -5,15 +5,12 @@
 
 module Network.JobQueue.JobQueue.Internal where
 
-import Control.Applicative
 import qualified Data.ByteString.Char8 as BS
 import Control.Exception
 import Data.Time.Clock
 import System.Log.Logger
 import Control.Monad
 import Data.Maybe
-import Data.Default
-import System.IO
 
 import Network.JobQueue.Class
 import Network.JobQueue.Types
@@ -21,35 +18,8 @@ import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
+import Network.JobQueue.Settings
 
-type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
-type LoggingHandleFn a = Job a -> IO ()
-type AfterExecuteHandleFn a = Job a -> IO ()
-
-{- | Job queue settings
--}
-data (Unit a) => Settings a = Settings {
-    failureHandleFn :: FailureHandleFn a      -- ^ a function called when an action fails
-  , afterExecuteFn  :: AfterExecuteHandleFn a -- ^ a function called after an action is executed (for debugging)
-  , loggingHandleFn :: LoggingHandleFn a      -- ^ a function called when an action should be logged
-  }
-                              
-instance (Unit a) => Default (Settings a) where
-  def = Settings handleFailure handleAfterExecute handleLogging
-    where
-      handleFailure :: (Unit a) => FailureHandleFn a
-      handleFailure _al _subject msg mjob = do
-        hPutStrLn stderr msg
-        hFlush stderr
-        case mjob of
-          Just job -> Just <$> createJob Runnable (getRecovery (jobUnit job))
-          Nothing -> return (Nothing)
-
-      handleAfterExecute :: (Unit a) => Job a -> IO ()
-      handleAfterExecute _job = return ()
-
-      handleLogging :: (Unit a) => Job a -> IO ()
-      handleLogging _job = return ()
 
 data JobQueue e a where
   JobQueue :: (BackendQueue q) => {
