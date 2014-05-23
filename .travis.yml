@@ -18,11 +18,13 @@ before_install:
  - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/1.18/bin:$PATH
 
 install:
+ - cd jobqueue
  - cabal update
  - cabal install happy
  - cabal install --only-dependencies --enable-tests --enable-benchmarks --extra-include-dirs=/usr/include/zookeeper
 
 script:
+ - cd jobqueue
  - cabal configure --enable-tests --enable-benchmarks -v2  # -v2 provides useful information for debugging
  - cabal build   # this builds all libraries and executables (including tests/benchmarks)
  - cabal test
