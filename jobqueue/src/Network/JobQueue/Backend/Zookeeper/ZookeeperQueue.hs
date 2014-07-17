@@ -130,6 +130,7 @@ deleteZQueue zkQueue nodeName = do
   e <- Z.delete (zqHandle zkQueue) nodeName' Nothing
   case e of
     Right () -> return (True)
+    Left Z.NoNodeError -> throwIO $ NotFound nodeName
     Left zkerr -> throwZKError ("deleteZQueue(nodeName=" ++ nodeName' ++ ")") zkerr
 
 -- offer

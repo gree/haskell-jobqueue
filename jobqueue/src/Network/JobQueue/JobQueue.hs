@@ -27,6 +27,7 @@ module Network.JobQueue.JobQueue (
 import Control.Applicative
 import Control.Concurrent
 import Control.Monad
+import Control.Exception
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 
@@ -129,7 +130,7 @@ executeJob jobqueue env = do
           executeJob' jobqueue env nodeName job' version >>= afterExecuteJob jobqueue nodeName job' version
           (jqAfterExecuteFn jobqueue) job'
       Delete -> do
-        _r <- deleteJob jobqueue nodeName
+        void $ deleteJob jobqueue nodeName
         executeJob jobqueue env
       Skip -> return ()
     Nothing -> return ()
@@ -150,7 +151,10 @@ deleteJob :: (Unit a)
              => JobQueue e a -- ^ a job queue
              -> String       -- ^ a job identifier
              -> IO Bool
-deleteJob JobQueue { jqBackendQueue = bq } nodeName = deleteQueue bq nodeName
+deleteJob JobQueue { jqBackendQueue = bq } nodeName = do
+  deleteQueue bq nodeName `catch` \e -> case e of
+    NotFound _ -> return True
+    _ -> throwIO e
 
 {- | Clear all jobs from a job queue.
 -}

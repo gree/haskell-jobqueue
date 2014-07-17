@@ -16,6 +16,9 @@ data Backend where
     , bClose :: IO ()
     } -> Backend
 
-data BackendError = SessionError String deriving (Show, Typeable)
+data BackendError = 
+    NotFound String
+  | SessionError String
+  deriving (Show, Typeable)
 
 instance Exception BackendError
