@@ -129,8 +129,8 @@ Test-Suite test
                  , network >= 2.3.2
                  , directory
                  , QuickCheck == 2.5.1.1
-                 , HUnit
                  , hspec
+                 , async
                  , jobqueue
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test

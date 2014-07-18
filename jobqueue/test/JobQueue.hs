@@ -10,6 +10,7 @@ import Test.Hspec
 import Control.Monad
 import System.Directory
 import System.IO.Error (isDoesNotExistError)
+import Control.Concurrent.Async
 
 import Network.JobQueue
 
@@ -27,6 +28,14 @@ instance Unit JobUnit where
 
 instance Desc JobUnit where
 
+data Looping = Looping Int deriving (Show, Read, Eq, Ord)
+
+instance Unit Looping where
+  getPriority _ju = 1
+  getRecovery _ju = (Looping 0)
+
+instance Desc Looping where
+
 testJobQueue :: Spec
 testJobQueue = do
   describe "job queue" $ do
@@ -42,10 +51,10 @@ testJobQueue = do
         scheduleJob jq HelloStep
         countJobQueue jq `shouldReturn` 1
       withJobQueue $ \jq -> do
-        let loop = \env jq -> do
-              executeJob jq env
-              count <- countJobQueue jq
-              when (count > 0) $ loop env jq
+        let loop = \env jq' -> do
+              executeJob jq' env
+              count <- countJobQueue jq'
+              when (count > 0) $ loop env jq'
         loop (JobEnv "hello") jq
         countJobQueue jq `shouldReturn` 0
       removeIfExists "case.sqlite3"
@@ -68,6 +77,24 @@ testJobQueue = do
         resumeJobQueue jq `shouldReturn` True
         step (JobEnv "hello") jq 5
         countJobQueue jq `shouldReturn` 0
+      removeIfExists "case.sqlite3"
+
+    it "can be used concurrently" $ do
+      removeIfExists "case.sqlite3"
+      let withJobQueue = buildJobQueue "sqlite3://case.sqlite3" "/conc_1" $ do
+            process $ \(Looping count) -> if count > 0 then fork (Looping (count - 1)) else fin
+      withJobQueue $ \jq -> do
+        scheduleJob jq (Looping 10000)
+        countJobQueue jq `shouldReturn` 1
+      let act = withJobQueue $ \jq -> do
+                  let loop = \env jq' -> do
+                        executeJob jq' env
+                        count <- countJobQueue jq'
+                        when (count > 0) $ loop env jq'
+                  loop (JobEnv "hello") jq
+                  countJobQueue jq `shouldReturn` 0
+      as <- forM [1..10] $ \_ -> async act
+      waitAny as
       removeIfExists "case.sqlite3"
 
 ---------------------------------------------------------------- Utils
