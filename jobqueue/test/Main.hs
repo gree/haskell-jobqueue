@@ -6,8 +6,14 @@ module Main where
 import Test.Hspec
 import JobQueue
 import BackendQueue
+import System.Environment (lookupEnv)
+import Data.Maybe
+import System.IO
 
 main :: IO ()
-main = hspec $ do
-  testJobQueue
-  testJobQueueBackend
+main = do
+  hSetBuffering stderr LineBuffering
+  backend <- fmap (fromMaybe "sqlite3://test.sqlite3") $ lookupEnv "JOBQUEUE_TEST_BACKEND"
+  hspec $ do
+    testJobQueueBackend backend
+    testJobQueue backend

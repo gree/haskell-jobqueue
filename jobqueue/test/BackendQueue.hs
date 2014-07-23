@@ -17,8 +17,8 @@ import Network.JobQueue.Backend.Zookeeper
 import Network.JobQueue.Backend.Types
 import Network.JobQueue.Backend.Class
 
-testJobQueueBackend :: Spec
-testJobQueueBackend = do
+testJobQueueBackend :: String -> Spec
+testJobQueueBackend backend = do
   describe "backend queue" $ do
     it "peeks" $ do
       withBackend $ \(Backend { bOpenQueue = openQueue }) -> do

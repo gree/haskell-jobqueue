@@ -28,6 +28,7 @@ instance BackendQueue Sqlite3Queue where
   listQueue    = listDBQueue
   itemsQueue   = itemsDBQueue
   countQueue   = countDBQueue
+  closeQueue   = const $ return ()
 
 openSqlite3Backend :: String -> IO Backend
 openSqlite3Backend filePath = do
@@ -41,7 +42,7 @@ openSqlite3Backend filePath = do
     , bClose = disconnect c
     }
 
-newSqlite3Backend :: Connection -> Backend
+newSqlite3Backend :: Connection -> IO Backend
 newSqlite3Backend c = do
   m <- newMVar ()
   return $ Backend {
@@ -52,7 +53,7 @@ newSqlite3Backend c = do
 
 readDBQueue :: Sqlite3Queue -> IO (Maybe (BS.ByteString, String))
 readDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT key, value FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
+  sqlvalues <- quickQuery' conn' ("SELECT key, value FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
   case sqlvalues of
     ((key:value:_):_) -> do
       _ <- run conn' ("DELETE FROM '" ++ queueName ++ "' WHERE key = ?") [toSql key]
@@ -61,7 +62,7 @@ readDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -
 
 peekDBQueue :: Sqlite3Queue -> IO (Maybe (BS.ByteString, String, String, Int))
 peekDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT key, value, version FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
+  sqlvalues <- quickQuery' conn' ("SELECT key, value, version FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
   case sqlvalues of
     ((key:value:version:_):_) -> return (Just (fromSql value, fromSql key, fromSql key, fromSql version))
     _ -> return (Nothing)
@@ -70,7 +71,7 @@ writeDBQueue :: Sqlite3Queue -> BS.ByteString -> Int -> IO (String)
 writeDBQueue Sqlite3Queue {..} value prio = do
   withLock mlock $ withTransaction conn $ \conn' -> do
     _ <- run conn' ("INSERT INTO '" ++ queueName ++ "'(prio, value, version) VALUES (?,?,0)") [toSql prio, toSql value]
-    sqlvalues <- quickQuery conn' ("SELECT seq FROM sqlite_sequence where name = '" ++ queueName ++ "'") []
+    sqlvalues <- quickQuery' conn' ("SELECT seq FROM sqlite_sequence where name = '" ++ queueName ++ "'") []
     case sqlvalues of
       ((key:_):_) -> do
         return (fromSql key)
@@ -84,37 +85,28 @@ deleteDBQueue Sqlite3Queue {..} key = withLock mlock $ withTransaction conn $ \c
 updateDBQueue :: Sqlite3Queue -> String -> BS.ByteString -> Int -> IO (Bool)
 updateDBQueue Sqlite3Queue {..} key value version = do
   withLock mlock $ withTransaction conn $ \conn' -> do
-    _ <- run conn' ("UPDATE '" ++ queueName ++ "' SET value = ?, version = ? WHERE key = ? AND version = ?") [toSql value, toSql (version+1), toSql key, toSql version]
-    sqlvalues <- quickQuery conn' ("SELECT key FROM '" ++ queueName ++ "' WHERE key = ? AND version = ? ORDER BY prio, key LIMIT 1") [toSql key, toSql (version+1)]
-    case sqlvalues of
-      [] -> return (False)
-      _ -> return (True)
+    nrows <- run conn' ("UPDATE '" ++ queueName ++ "' SET value = ?, version = ? WHERE key = ? AND version = ?") [toSql value, toSql (version+1), toSql key, toSql version]
+    return $ if nrows > 0 then True else False
 
 countDBQueue :: Sqlite3Queue -> IO (Int)
 countDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT COUNT (*) FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
+  sqlvalues <- quickQuery' conn' ("SELECT COUNT (*) FROM '" ++ queueName ++ "' ORDER BY prio, key LIMIT 1") []
   case sqlvalues of
     ((count:_):_) -> return (fromSql count)
     _ -> return (0)
 
 itemsDBQueue :: Sqlite3Queue -> IO ([String])
 itemsDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT key FROM '" ++ queueName ++ "' ORDER BY prio, key") []
+  sqlvalues <- quickQuery' conn' ("SELECT key FROM '" ++ queueName ++ "' ORDER BY prio, key") []
   case sqlvalues of
     keys -> return (map (fromSql . head) keys)
 
 listDBQueue :: Sqlite3Queue -> IO ([BS.ByteString])
 listDBQueue Sqlite3Queue {..} = withLock mlock $ withTransaction conn $ \conn' -> do
-  sqlvalues <- quickQuery conn' ("SELECT value FROM '" ++ queueName ++ "' ORDER BY prio, key") []
+  sqlvalues <- quickQuery' conn' ("SELECT value FROM '" ++ queueName ++ "' ORDER BY prio, key") []
   case sqlvalues of
     keys -> return (map (fromSql . head) keys)
 
-handleError :: forall a . IO a -> IO a
-handleError act = do
-  e <- try act :: IO (Either SqlError a)
-  case e of
-    Right r -> return r
-    Left err -> throwIO $ SessionError (show err)
-
 withLock :: MVar () -> IO a -> IO a
-withLock m act = withMVar m $ const (handleError act)
+withLock m act = handleSql (\err -> throwIO $ SessionError (show err)) $ do
+  bracket (takeMVar m) (putMVar m) $ const act

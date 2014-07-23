@@ -10,7 +10,10 @@ import Test.Hspec
 import Control.Monad
 import System.Directory
 import System.IO.Error (isDoesNotExistError)
+import Control.Concurrent
 import Control.Concurrent.Async
+import Data.Default
+import System.IO
 
 import Network.JobQueue
 
@@ -36,12 +39,11 @@ instance Unit Looping where
 
 instance Desc Looping where
 
-testJobQueue :: Spec
-testJobQueue = do
+testJobQueue :: String -> Spec
+testJobQueue backend = do
   describe "job queue" $ do
     it "says hello" $ do
-      removeIfExists "case.sqlite3"
-      let withJobQueue = buildJobQueue "sqlite3://case.sqlite3" "/hello_1" $ do
+      let withJobQueue = buildJobQueue backend "/says_hello_1" $ do
             process $ \WorldStep -> commitIO (putStrLn "world") >> fin
             process $ \HelloStep -> do
               env <- getEnv
@@ -57,11 +59,9 @@ testJobQueue = do
               when (count > 0) $ loop env jq'
         loop (JobEnv "hello") jq
         countJobQueue jq `shouldReturn` 0
-      removeIfExists "case.sqlite3"
     
     it "suspends" $ do
-      removeIfExists "case.sqlite3"
-      let withJobQueue = buildJobQueue "sqlite3://case.sqlite3" "/hello_1" $ do
+      let withJobQueue = buildJobQueue backend "/suspends_1" $ do
             process $ \WorldStep -> commitIO (putStrLn "world") >> fin
             process $ \HelloStep -> do
               env <- getEnv
@@ -77,24 +77,27 @@ testJobQueue = do
         resumeJobQueue jq `shouldReturn` True
         step (JobEnv "hello") jq 5
         countJobQueue jq `shouldReturn` 0
-      removeIfExists "case.sqlite3"
 
     it "can be used concurrently" $ do
-      removeIfExists "case.sqlite3"
-      let p = process $ \(Looping count) -> if count > 0 then fork (Looping (count - 1)) else fin
-      buildJobQueue "sqlite3://case.sqlite3" "/conc_1" p $ \jq -> do
-        scheduleJob jq (Looping 10000)
+      let p = process $ \(Looping count) -> if count > 0 then commitIO (hPutStrLn stderr (show count)) >> fork (Looping (count - 1)) else fin
+          env0 = (JobEnv "hello")
+      buildJobQueue backend "/concurrently_1" p $ \jq -> do
+        scheduleJob jq (Looping 1000)
         countJobQueue jq `shouldReturn` 1
-      let act = buildJobQueue "sqlite3://case.sqlite3" "/conc_1" p $ \jq -> do
-                  let loop = \env jq' -> do
+      bracket (openSession backend) (closeSession) $ \session -> do
+        let loop = \env jq' -> do
                         executeJob jq' env
                         count <- countJobQueue jq'
                         when (count > 0) $ loop env jq'
-                  loop (JobEnv "hello") jq
-                  countJobQueue jq `shouldReturn` 0
-      as <- forM [1..50] $ \_ -> async act
-      _ <- waitAny as
-      removeIfExists "case.sqlite3"
+        _ <- flip mapConcurrently [1..50] $ \_ -> do
+          jq <- openJobQueue session "/concurrently_1" def p
+          loop env0 jq
+          closeJobQueue jq
+        return ()
+      buildJobQueue backend "/concurrently_1" p $ \jq -> do
+        executeJob jq env0
+        countJobQueue jq `shouldReturn` 0
+      return ()
 
 ---------------------------------------------------------------- Utils
 
@@ -105,9 +108,3 @@ step env jq c
     step env jq (pred c)
   | otherwise = return ()
 
-removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `catch` handleExists
-  where
-    handleExists e
-      | isDoesNotExistError e = return ()
-      | otherwise = throwIO e

@@ -132,6 +132,7 @@ Test-Suite test
                  , hspec
                  , async
                  , jobqueue
+                 , data-default
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test
   Main-is:         Main.hs

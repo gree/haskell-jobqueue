@@ -1,10 +1,10 @@
 env:
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND=sqlite3
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND=zookeeper
- - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND=sqlite3
- - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND=zookeeper
- - GHCVER=head JOBQUEUE_TEST_BACKEND=sqlite3
- - GHCVER=head JOBQUEUE_TEST_BACKEND=zookeeper
+ - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=head JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=head JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
 
 matrix:
   allow_failures:
