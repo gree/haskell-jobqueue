@@ -12,8 +12,7 @@ import System.IO.Error (isDoesNotExistError)
 import System.Environment (lookupEnv)
 
 import qualified Data.ByteString.Char8 as BS
-import Network.JobQueue.Backend.Sqlite3
-import Network.JobQueue.Backend.Zookeeper
+import Network.JobQueue.Backend
 import Network.JobQueue.Backend.Types
 import Network.JobQueue.Backend.Class
 
@@ -21,7 +20,7 @@ testJobQueueBackend :: String -> Spec
 testJobQueueBackend backend = do
   describe "backend queue" $ do
     it "peeks" $ do
-      withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+      withBackend backend $ \(Backend { bOpenQueue = openQueue }) -> do
         q <- openQueue "/case/peek_1"
         k <- writeQueue q (BS.pack "hoge") 0
         Just (bs, name, idName, version) <- peekQueue q
@@ -29,13 +28,13 @@ testJobQueueBackend backend = do
         countQueue q `shouldReturn` 0
 
     it "writes and reads" $ do
-      withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+      withBackend backend $ \(Backend { bOpenQueue = openQueue }) -> do
         q <- openQueue "/case/read_and_write_1"
         k <- writeQueue q (BS.pack "hoge") 0
         readQueue q `shouldReturn` Just (BS.pack "hoge", k)
 
     it "counts" $ do
-      withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+      withBackend backend $ \(Backend { bOpenQueue = openQueue }) -> do
         q <- openQueue "/case/count_1"
         _ <- writeQueue q (BS.pack "hoge1") 0
         countQueue q `shouldReturn` 1
@@ -46,7 +45,7 @@ testJobQueueBackend backend = do
         return ()
 
     it "has items" $ do
-      withBackend $ \(Backend { bOpenQueue = openQueue }) -> do
+      withBackend backend $ \(Backend { bOpenQueue = openQueue }) -> do
         q <- openQueue "/case/items_1"
         k1 <- writeQueue q (BS.pack "hoge1") 0
         itemsQueue q `shouldReturn` [k1]
@@ -58,21 +57,7 @@ testJobQueueBackend backend = do
 
 ---------------------------------------------------------------- Utils
 
-withBackend :: (Backend -> IO ()) -> IO ()
-withBackend act = do
-  backend <- lookupEnv "JOBQUEUE_TEST_BACKEND"
-  case backend of
-    Just "zookeeper" -> do
-      bracket (openZookeeperBackend "localhost:2181") bClose act
-    _ -> do
-      let testFile = "test.sqlite3"
-      r <- bracket (openSqlite3Backend testFile) bClose act
-      removeIfExists testFile
-      return r
+withBackend :: String -> (Backend -> IO ()) -> IO ()
+withBackend backend act = do
+  bracket (openBackend backend) bClose act
 
-removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `catch` handleExists
-  where
-    handleExists e
-      | isDoesNotExistError e = return ()
-      | otherwise = throwIO e
