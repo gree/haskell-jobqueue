@@ -81,20 +81,19 @@ testJobQueue = do
 
     it "can be used concurrently" $ do
       removeIfExists "case.sqlite3"
-      let withJobQueue = buildJobQueue "sqlite3://case.sqlite3" "/conc_1" $ do
-            process $ \(Looping count) -> if count > 0 then fork (Looping (count - 1)) else fin
-      withJobQueue $ \jq -> do
+      let p = process $ \(Looping count) -> if count > 0 then fork (Looping (count - 1)) else fin
+      buildJobQueue "sqlite3://case.sqlite3" "/conc_1" p $ \jq -> do
         scheduleJob jq (Looping 10000)
         countJobQueue jq `shouldReturn` 1
-      let act = withJobQueue $ \jq -> do
+      let act = buildJobQueue "sqlite3://case.sqlite3" "/conc_1" p $ \jq -> do
                   let loop = \env jq' -> do
                         executeJob jq' env
                         count <- countJobQueue jq'
                         when (count > 0) $ loop env jq'
                   loop (JobEnv "hello") jq
                   countJobQueue jq `shouldReturn` 0
-      as <- forM [1..10] $ \_ -> async act
-      waitAny as
+      as <- forM [1..50] $ \_ -> async act
+      _ <- waitAny as
       removeIfExists "case.sqlite3"
 
 ---------------------------------------------------------------- Utils

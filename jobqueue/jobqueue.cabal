@@ -123,7 +123,7 @@ Executable jobqueue-sample-suspend
     Buildable: False
 
 Test-Suite test
-  Ghc-Options:     -threaded -O2 -Wall
+  Ghc-Options:     -threaded -O2
   Build-depends:   base
                  , bytestring
                  , network >= 2.3.2
