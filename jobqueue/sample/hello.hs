@@ -1,7 +1,10 @@
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 import Control.Monad
+import Control.Monad.Logger
 import System.Environment hiding (getEnv)
 import Network.JobQueue
 
@@ -25,8 +28,11 @@ main = do
   case args of
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ process $ \case
-            WorldStep -> commitIO (putStrLn "world") >> fin
+            WorldStep -> do
+              $(logInfo) "WorldStep"
+              commitIO (putStrLn "world") >> fin
             HelloStep -> do
+              $(logInfo) "HelloStep"
               env <- getEnv
               commitIO (putStr $ (jeHello env) ++ ", ")
               next WorldStep

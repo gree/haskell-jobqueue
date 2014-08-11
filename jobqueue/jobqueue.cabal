@@ -40,6 +40,7 @@ Library
                  , data-default
                  , HDBC
                  , HDBC-sqlite3
+                 , monad-logger
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -65,6 +66,7 @@ Executable jobqueue-sample-hello
                  , bytestring
                  , containers
                  , data-default
+                 , monad-logger
   Hs-source-dirs:  sample
   Main-is:         hello.hs
   Extensions:      DeriveDataTypeable

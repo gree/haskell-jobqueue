@@ -30,6 +30,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
+import Control.Monad.Logger
 
 import Data.Maybe
 import Data.Time.Clock
@@ -63,6 +64,7 @@ runAction env ju action = do
     (e,r) <- flip runStateT Nothing
            $ flip runReaderT (ActionEnv env ju)
            $ runErrorT
+           $ runStderrLoggingT
            $ runAM
            $ action `catchError` defaultHandler
     return $ either (const Nothing) (const $ r) e
