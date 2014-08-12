@@ -5,9 +5,18 @@
 -}
 module Network.JobQueue.Class where
 
+import Control.Monad.Logger
+import System.Log.FastLogger
+import System.IO
+import qualified Data.ByteString.Char8 as S8
+
 {- | Environment class
 -}
 class Env a where
+  envLogger :: a -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+  envLogger _ = defaultOutput stderr
+    where
+      defaultOutput h loc src level msg = S8.hPutStrLn h $ fromLogStr $ defaultLogStr loc src level msg
 
 {- | Environment with a parameter set
 -}

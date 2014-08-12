@@ -12,8 +12,6 @@ module Network.JobQueue.Job (
   , module Network.JobQueue.Action
   ) where
 
---module Network.JobQueue.Job where
-
 import Control.Monad.State hiding (state)
 
 import Data.Time.Clock

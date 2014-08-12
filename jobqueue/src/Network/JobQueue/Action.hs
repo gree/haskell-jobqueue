@@ -61,13 +61,13 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
 
 runAction :: (Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
 runAction env ju action = do
-    (e,r) <- flip runStateT Nothing
-           $ flip runReaderT (ActionEnv env ju)
-           $ runErrorT
-           $ runStderrLoggingT
-           $ runAM
-           $ action `catchError` defaultHandler
-    return $ either (const Nothing) (const $ r) e
+  (e,r) <- flip runStateT Nothing
+         $ flip runReaderT (ActionEnv env ju)
+         $ runErrorT
+         $ flip runLoggingT (envLogger env)
+         $ runAM
+         $ action `catchError` defaultHandler
+  return $ either (const Nothing) (const $ r) e
 
 defaultHandler :: (Env e, Unit a) => ActionError -> ActionM e a ()
 defaultHandler (ActionError al msg) = result (Just $ Left $ Failure al msg)

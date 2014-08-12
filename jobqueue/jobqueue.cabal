@@ -40,6 +40,7 @@ Library
                  , data-default
                  , HDBC
                  , HDBC-sqlite3
+                 , fast-logger
                  , monad-logger
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue

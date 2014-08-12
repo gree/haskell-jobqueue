@@ -5,8 +5,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Network.JobQueue.Types (
-    JobActionState(..)
+module Network.JobQueue.Types
+  ( JobActionState(..)
   , JobM
   , ActionM
   , ActionFn
@@ -40,8 +40,8 @@ import Network.JobQueue.Class
 
 data Alert = Critical | Error | Warning | Notice | Info deriving (Show)
 
-data Next a = Next {
-    nextJob :: (Maybe a)
+data Next a = Next
+  { nextJob :: (Maybe a)
   , nextForks :: [(a, Maybe UTCTime)]
   }
 
