@@ -13,21 +13,22 @@ import Control.Monad
 import Data.Maybe
 
 import Network.JobQueue.Class
+import Network.JobQueue.Aux
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
-import Network.JobQueue.Settings
+-- import Network.JobQueue.Settings
 
 
 data JobQueue e a where
   JobQueue :: (BackendQueue q) => {
     jqBackendQueue :: q
   , jqActionState :: JobActionState e a
-  , jqFailureHandleFn :: FailureHandleFn a
-  , jqAfterExecuteFn :: AfterExecuteHandleFn a
-  , jqLoggingHandleFn :: LoggingHandleFn a
+--  , jqFailureHandleFn :: FailureHandleFn a
+--  , jqAfterExecuteFn :: AfterExecuteHandleFn a
+--  , jqLoggingHandleFn :: LoggingHandleFn a
   } -> JobQueue e a
 
 data ActionForJob a = (Unit a) => Execute (Job a) | Delete | Skip
@@ -56,13 +57,13 @@ peekJob' JobQueue { jqBackendQueue = bq } = do
         Nothing -> return (Nothing)
         Just job -> return (Just (job, nodeName, idName, version))
 
-executeJob' :: (Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Maybe (JobResult a))
+executeJob' :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Maybe (JobResult a))
 executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState } env nodeName currentJob version = do
   currentTime <- getCurrentTime
   if jobOnTime currentJob < currentTime
     then do
       noticeM "jobqueue" (show currentJob)
-      when (toBeLogged $ jobUnit currentJob) $ (jqLoggingHandleFn jqueue) currentJob
+      when (toBeLogged $ jobUnit currentJob) $ auxHandleLogging env currentJob
       runActionState actionState env (jobUnit currentJob) `catch` handleSome
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
@@ -70,12 +71,11 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
       return (Nothing)
   where
     handleSome :: SomeException -> IO (Maybe (JobResult a))
-    handleSome e = do
-      _r <- (jqFailureHandleFn jqueue) Error (show e) (show e) (Just currentJob)
-      return (Nothing)
+    handleSome e = return Nothing
+      -- auxHandleFailure env Error (show e) (show e) (Just currentJob)
 
-afterExecuteJob :: (Unit a) => JobQueue e a -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
-afterExecuteJob jqueue nodeName currentJob version mResult = case mResult of
+afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
+afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
   Just res -> case res of
     Right (Next mNextJu forks) -> do
       case mNextJu of
@@ -89,7 +89,7 @@ afterExecuteJob jqueue nodeName currentJob version mResult = case mResult of
         (forked, ontime) -> rescheduleJob jqueue ontime forked
     Left (Failure alert msg) -> do
       let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] " ++ msg
-      n <- (jqFailureHandleFn jqueue) alert subject msg (Just currentJob)
+      n <- auxHandleFailure env alert subject msg (Just currentJob)
       recover n
   Nothing -> do
     -- let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] aborted"

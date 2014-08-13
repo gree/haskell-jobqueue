@@ -20,8 +20,8 @@ type LoggingHandleFn a = Job a -> IO ()
 
 {- | Job queue settings
 -}
-data (Unit a) => Settings a = Settings {
-    failureHandleFn :: FailureHandleFn a      -- ^ a function called when an action fails
+data (Unit a) => Settings a = Settings
+  { failureHandleFn :: FailureHandleFn a      -- ^ a function called when an action fails
   , afterExecuteFn  :: AfterExecuteHandleFn a -- ^ a function called after an action is executed (for debugging)
   , loggingHandleFn :: LoggingHandleFn a      -- ^ a function called when an action should be logged
   }

@@ -9,6 +9,7 @@ data JobEnv = JobEnv {
   } deriving (Eq, Show)
 
 instance Env JobEnv where
+instance Aux JobEnv where
 
 data JobUnit = ExecuteStep Integer deriving (Show, Read, Eq, Ord)
 

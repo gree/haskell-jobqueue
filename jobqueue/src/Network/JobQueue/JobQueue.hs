@@ -32,6 +32,7 @@ import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 
 import Network.JobQueue.Class
+import Network.JobQueue.Aux
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job
@@ -79,7 +80,7 @@ openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq }))
              name
              (Settings fhFn aeFn logFn)
              jobm = do
-  JobQueue <$> oq name <*> buildActionState jobm <*> pure fhFn <*> pure aeFn <*> pure logFn
+  JobQueue <$> oq name <*> buildActionState jobm
 
 {- | Close a job queue.
 -}
@@ -119,7 +120,7 @@ suspendJobQueue jobqueue = do
 
 {- | Execute an action of the head job in a job queue.
 -}
-executeJob :: (Env e, Unit a) => JobQueue e a -> e -> IO ()
+executeJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> IO ()
 executeJob jobqueue env = do
   r <- peekJob' jobqueue
   case r of
@@ -130,8 +131,8 @@ executeJob jobqueue env = do
       Execute job' -> do
         isUpdated <- updateJob jobqueue nodeName job' version
         when (isUpdated && jobState job == Runnable && jobState job' == Running) $ do
-          executeJob' jobqueue env nodeName job' version >>= afterExecuteJob jobqueue nodeName job' version
-          (jqAfterExecuteFn jobqueue) job'
+          executeJob' jobqueue env nodeName job' version >>= afterExecuteJob jobqueue env nodeName job' version
+          auxHandleAfterExecute env job'
       Delete -> do
         void $ deleteJob jobqueue nodeName
         executeJob jobqueue env

@@ -9,6 +9,7 @@ data JobEnv = JobEnv {
   } deriving (Eq, Show)
 
 instance Env JobEnv where
+instance Aux JobEnv where
 
 data JobUnit = Priority0 | Priority1 Int | Priority1' Int | Priority2 | Failed deriving (Show, Read, Eq, Ord)
 

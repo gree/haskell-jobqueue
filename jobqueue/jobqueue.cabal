@@ -47,7 +47,9 @@ Library
                  , Network.JobQueue.Class
                  , Network.JobQueue.Types
                  , Network.JobQueue.Action
+                 , Network.JobQueue.Aux
                  , Network.JobQueue.Job
+                 , Network.JobQueue.Job.Internal
                  , Network.JobQueue.JobQueue
                  , Network.JobQueue.JobQueue.Internal
                  , Network.JobQueue.JobResult

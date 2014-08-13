@@ -11,6 +11,7 @@ data JobEnv = JobEnv {
   } deriving (Eq, Show)
 
 instance Env JobEnv where
+instance Aux JobEnv where
 
 data JobUnit =
     InitialStep

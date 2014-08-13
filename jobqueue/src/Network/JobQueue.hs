@@ -107,6 +107,7 @@ module Network.JobQueue (
   , logMsg
   , commitIO
   , module Network.JobQueue.Class
+  , module Network.JobQueue.Aux
   , module Network.JobQueue.JobQueue
   ) where
 
@@ -117,6 +118,7 @@ import Data.Default
 
 import Network.JobQueue.Types
 import Network.JobQueue.Class
+import Network.JobQueue.Aux
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
@@ -157,7 +159,7 @@ buildJobQueue loc name jobm = \action -> do
 
 {- | Run a job queue while there is at least one job in the queue.
 -}
-runJobQueue :: (Env e, Unit a)
+runJobQueue :: (Aux e, Env e, Unit a)
                => e
                -> String          -- ^ locator (ex.\"zookeeper:\/\/192.168.0.1\/myapp\")
                -> String          -- ^ queue name (ex. \"/jobqueue\")

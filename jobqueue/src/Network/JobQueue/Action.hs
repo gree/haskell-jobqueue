@@ -37,6 +37,7 @@ import Data.Time.Clock
 import Data.Default (Default, def)
 
 import Network.JobQueue.Class
+import Network.JobQueue.Aux
 import Network.JobQueue.Types
 
 buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
@@ -59,12 +60,12 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
     handleFail (PatternMatchFail _msg) = do
       return (Nothing)
 
-runAction :: (Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
+runAction :: (Aux e, Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
 runAction env ju action = do
   (e,r) <- flip runStateT Nothing
          $ flip runReaderT (ActionEnv env ju)
          $ runErrorT
-         $ flip runLoggingT (envLogger env)
+         $ flip runLoggingT (auxLogger env)
          $ runAM
          $ action `catchError` defaultHandler
   return $ either (const Nothing) (const $ r) e
