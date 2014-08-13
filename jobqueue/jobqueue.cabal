@@ -43,6 +43,7 @@ Library
                  , fast-logger
                  , monad-logger
                  , template-haskell
+                 , text-format
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class

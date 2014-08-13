@@ -26,18 +26,17 @@ instance Desc JobUnit where
 
 main :: IO ()
 main = do
-  h <- openlog "hello" [] SYSLOG INFO
+  h <- openlog "hello" [] USER INFO
   updateGlobalLogger rootLoggerName (setHandlers [h])
-
   args <- getArgs
   case args of
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ process $ \case
             WorldStep -> do
-              $(logWarn) "WorldStep"
+              $(logWarn) "running {}" ["WorldStep" :: String]
               commitIO (putStrLn "world") >> fin
             HelloStep -> do
-              $(logWarn) "HelloStep"
+              $(logWarn) "running {}" ["HelloStep" :: String]
               env <- getEnv
               commitIO (putStr $ (jeHello env) ++ ", ")
               next WorldStep

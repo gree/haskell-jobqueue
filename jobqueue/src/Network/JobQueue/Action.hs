@@ -89,7 +89,7 @@ param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
     Nothing -> do
-      $(logCritical) $ T.pack $ "internal error. no parse: " ++ show (key, defaultValue)
+      $(logCritical) "internal error. no parse: " [show (key, defaultValue)]
       abort
     Just defaultValue' -> case lookup key (envParameters env) of
       Just value -> return (fromMaybe defaultValue' (maybeRead value))
