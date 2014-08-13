@@ -7,8 +7,8 @@ module Network.JobQueue.Aux where
 
 import Control.Monad.Logger
 import Control.Applicative
-import System.Log.FastLogger
 import System.IO
+import System.Log.FastLogger
 import System.Log.Logger
 import System.Environment (getProgName)
 
@@ -19,20 +19,18 @@ import qualified Data.ByteString.Char8 as S8
 
 class Aux a where
   auxLogger :: a -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
-  auxLogger _ = defaultOutput stderr
+  auxLogger _ loc logsrc loglevel msg = do
+    progName <- getProgName
+    logFunc loglevel progName $ S8.unpack $ fromLogStr $ defaultLogStr loc logsrc loglevel msg
     where
-      defaultOutput h loc src level msg = do
-        progName <- getProgName
-        logFunc level progName $ S8.unpack $ fromLogStr $ defaultLogStr loc src level msg
-
       logFunc level = case level of
-          LevelDebug -> debugM
-          LevelInfo -> infoM
-          LevelWarn -> warningM
-          LevelError -> errorM
-          LevelOther "notice" -> noticeM
-          LevelOther "critical" -> criticalM
-          LevelOther _ -> warningM
+        LevelDebug -> debugM
+        LevelInfo -> infoM
+        LevelWarn -> warningM
+        LevelError -> errorM
+        LevelOther "notice" -> noticeM
+        LevelOther "critical" -> criticalM
+        LevelOther _ -> warningM
 
   auxHandleFailure :: (Unit b) => a -> LogLevel -> String -> String -> Maybe (Job b) -> IO (Maybe (Job b))
   auxHandleFailure _ _al _subject msg mjob = do
