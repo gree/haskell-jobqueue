@@ -91,7 +91,6 @@ module Network.JobQueue (
   , ActionM
   , JobM
   , JobActionState
-  , LogLevel(..)
   , process
   , createJob
   , fin
@@ -108,6 +107,7 @@ module Network.JobQueue (
   , module Network.JobQueue.Class
   , module Network.JobQueue.Aux
   , module Network.JobQueue.JobQueue
+  , module Network.JobQueue.Logger
   ) where
 
 import Prelude hiding (log)
@@ -120,7 +120,7 @@ import Network.JobQueue.Aux
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
-import Control.Monad.Logger (LogLevel(..))
+import Network.JobQueue.Logger
 
 {- | Build a function that takes a function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
 
