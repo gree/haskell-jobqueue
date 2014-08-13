@@ -153,7 +153,7 @@ buildJobQueue :: (Env e, Unit a) => String -- ^ locator (ex.\"zookeeper:\/\/192.
                  -> ((JobQueue e a -> IO ()) -> IO ()) -- ^ job queue executor
 buildJobQueue loc name jobm = \action -> do
   bracket (openSession loc) (closeSession) $ \session -> do
-    jq <- openJobQueue session name def jobm
+    jq <- openJobQueue session name jobm
     action jq
     closeJobQueue jq
 

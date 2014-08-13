@@ -5,10 +5,7 @@
 
 module Network.JobQueue.JobQueue (
     JobQueue
-  , FailureHandleFn
-  , AfterExecuteHandleFn
   , Session
-  , Settings (..)
   , openSession
   , newSession
   , closeSession
@@ -39,7 +36,6 @@ import Network.JobQueue.Job
 import Network.JobQueue.Backend
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
-import Network.JobQueue.Settings
 
 import Network.JobQueue.JobQueue.Internal
 
@@ -73,12 +69,10 @@ closeSession (Session isOwner _locator backend) = when isOwner $ bClose backend
 openJobQueue :: (Env e, Unit a)
                 => Session     -- ^ a session handler
                 -> String      -- ^ a queue name
-                -> Settings a  -- ^ queue settings
                 -> JobM e a () -- ^ a state machine definition
                 -> IO (JobQueue e a)
 openJobQueue (Session _isOwner _locator _backend@(Backend { bOpenQueue = oq }))
              name
-             (Settings fhFn aeFn logFn)
              jobm = do
   JobQueue <$> oq name <*> buildActionState jobm
 

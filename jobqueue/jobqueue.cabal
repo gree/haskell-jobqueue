@@ -58,7 +58,6 @@ Library
                  , Network.JobQueue.Backend.Types
                  , Network.JobQueue.Backend.Zookeeper
                  , Network.JobQueue.Backend.Sqlite3
-                 , Network.JobQueue.Settings
   Other-modules:   Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 

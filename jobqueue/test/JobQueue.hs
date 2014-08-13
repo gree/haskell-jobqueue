@@ -12,7 +12,6 @@ import System.Directory
 import System.IO.Error (isDoesNotExistError)
 import Control.Concurrent
 import Control.Concurrent.Async
-import Data.Default
 import System.IO
 
 import Network.JobQueue
@@ -22,6 +21,7 @@ data JobEnv = JobEnv {
   } deriving (Eq, Show)
 
 instance Env JobEnv where
+instance Aux JobEnv where
 
 data JobUnit = HelloStep | WorldStep deriving (Show, Read, Eq, Ord)
 
@@ -90,7 +90,7 @@ testJobQueue backend = do
                         count <- countJobQueue jq'
                         when (count > 0) $ loop env jq'
         _ <- flip mapConcurrently [1..50] $ \_ -> do
-          jq <- openJobQueue session "/concurrently_1" def p
+          jq <- openJobQueue session "/concurrently_1" p
           loop env0 jq
           closeJobQueue jq
         return ()
@@ -101,7 +101,7 @@ testJobQueue backend = do
 
 ---------------------------------------------------------------- Utils
 
-step :: (Unit a1, Env e) => e -> JobQueue e a1 -> Int -> IO ()
+step :: (Aux e, Env e, Unit a) => e -> JobQueue e a -> Int -> IO ()
 step env jq c
   | c > 0 = do
     executeJob jq env
