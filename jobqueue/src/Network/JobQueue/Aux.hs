@@ -1,10 +1,14 @@
 
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.JobQueue.Aux where
 
 import Control.Monad.Logger
 import Control.Applicative
 import System.Log.FastLogger
 import System.IO
+import System.Log.Logger
+import System.Environment (getProgName)
 
 import Network.JobQueue.Types
 import Network.JobQueue.Job.Internal
@@ -15,7 +19,17 @@ class Aux a where
   auxLogger :: a -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
   auxLogger _ = defaultOutput stderr
     where
-      defaultOutput h loc src level msg = S8.hPutStrLn h $ fromLogStr $ defaultLogStr loc src level msg
+      defaultOutput h loc src level msg = do
+        progName <- getProgName
+        log level progName $ S8.unpack $ fromLogStr $ defaultLogStr loc src level msg
+
+      log level = case level of
+          LevelDebug -> debugM
+          LevelInfo -> infoM
+          LevelWarn -> warningM
+          LevelError -> errorM
+          LevelOther "notice" -> noticeM
+          LevelOther _ -> warningM
 
   auxHandleFailure :: (Unit b) => a -> Alert -> String -> String -> Maybe (Job b) -> IO (Maybe (Job b))
   auxHandleFailure _ _al _subject msg mjob = do

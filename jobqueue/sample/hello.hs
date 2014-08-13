@@ -5,6 +5,8 @@
 
 import Control.Monad
 import Control.Monad.Logger
+import System.Log.Logger
+import System.Log.Handler.Syslog
 import System.Environment hiding (getEnv)
 import Network.JobQueue
 
@@ -25,15 +27,18 @@ instance Desc JobUnit where
 
 main :: IO ()
 main = do
+  h <- openlog "hello" [] SYSLOG INFO
+  updateGlobalLogger rootLoggerName (setHandlers [h])
+
   args <- getArgs
   case args of
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ process $ \case
             WorldStep -> do
-              $(logInfo) "WorldStep"
+              $(logWarn) "WorldStep"
               commitIO (putStrLn "world") >> fin
             HelloStep -> do
-              $(logInfo) "HelloStep"
+              $(logWarn) "HelloStep"
               env <- getEnv
               commitIO (putStr $ (jeHello env) ++ ", ")
               next WorldStep

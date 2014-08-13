@@ -69,6 +69,7 @@ Executable jobqueue-sample-hello
                  , containers
                  , data-default
                  , monad-logger
+                 , hslogger
   Hs-source-dirs:  sample
   Main-is:         hello.hs
   Extensions:      DeriveDataTypeable
