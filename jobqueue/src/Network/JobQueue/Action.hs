@@ -2,6 +2,7 @@
 -- License: MIT-style
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Network.JobQueue.Action (
     JobActionState
@@ -30,6 +31,7 @@ import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger
 
+import qualified Data.Text as T
 import Data.Maybe
 import Data.Time.Clock
 import Data.Default (Default, def)
@@ -37,6 +39,7 @@ import Data.Default (Default, def)
 import Network.JobQueue.Class
 import Network.JobQueue.Aux
 import Network.JobQueue.Types
+import Network.JobQueue.Logger
 
 buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
 buildActionState jobs = execStateT (runS jobs) (JobActionState [])
@@ -85,7 +88,9 @@ param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a (b)
 param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
-    Nothing -> abort (LevelOther "critical") $ "internal error. no parse: " ++ show (key, defaultValue)
+    Nothing -> do
+      $(logCritical) $ T.pack $ "internal error. no parse: " ++ show (key, defaultValue)
+      abort
     Just defaultValue' -> case lookup key (envParameters env) of
       Just value -> return (fromMaybe defaultValue' (maybeRead value))
       Nothing -> return (defaultValue')
@@ -98,7 +103,8 @@ param (key, defaultValue) = do
      If it doesn't change the state of the external system, you can use liftIO instead.
 -}
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
-commitIO action = liftIO action
+commitIO action = do
+  liftIO action
 
 ----------------
 
@@ -141,7 +147,8 @@ next :: (Env e, Unit a)
 next ju = modify $ \s -> Just $ setNextJob ju $ fromMaybe def s
 
 {- | Move to the next state immediately.
-     This is different from "next" function because this doesn't override it.
+     This is different from "next" function because this doesn't override
+     if the next job is already set.
 -}
 orNext :: (Env e, Unit a)
          => a              -- ^ the next state
@@ -161,15 +168,12 @@ none = result Nothing
 
 {- | Abort the execution of a state machine.
      If a critical problem is found and there is a need to switch to the failure state,
-     call this function with a human readable meassage.
+     call this function.
 -}
-abort :: (Env e, Unit a) => LogLevel -> String -> ActionM e a b
-abort level msg = do
-  result $ Just $ Left $ Failure level msg
-  throwError $ ActionError level msg
+abort :: (Env e, Unit a) => ActionM e a b
+abort = throwError $ AbortError
 
 ---------------------------------------------------------------- PRIVATE
 
 forkWith :: (Env e, Unit a) => a -> Maybe UTCTime -> ActionM e a ()
 forkWith ju mt = modify $ \s -> Just $ addForkJob (ju, mt) $ fromMaybe def s
-

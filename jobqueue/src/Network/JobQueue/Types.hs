@@ -38,8 +38,6 @@ import Network.JobQueue.Class
 
 -------------------------------- Types
 
--- data Alert = Critical | Error | Warning | Notice | Info deriving (Show)
-
 data Next a = Next
   { nextJob :: (Maybe a)
   , nextForks :: [(a, Maybe UTCTime)]
@@ -83,14 +81,14 @@ instance Default (JobActionState e a) where
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
   deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
 
-data ActionError = ActionError LogLevel String
+data ActionError = ActionError LogLevel String | AbortError
   deriving (Show)
 
 instance Error ActionError where
   strMsg = ActionError LevelWarn
 
-data ActionEnv e a = ActionEnv {
-    getJobEnv :: e
+data ActionEnv e a = ActionEnv
+  { getJobEnv :: e
   , getJobUnit :: a
   }
 

@@ -19,16 +19,12 @@ import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.Backend.Class
 import Network.JobQueue.Backend.Types
--- import Network.JobQueue.Settings
 
 
 data JobQueue e a where
   JobQueue :: (BackendQueue q) => {
     jqBackendQueue :: q
   , jqActionState :: JobActionState e a
---  , jqFailureHandleFn :: FailureHandleFn a
---  , jqAfterExecuteFn :: AfterExecuteHandleFn a
---  , jqLoggingHandleFn :: LoggingHandleFn a
   } -> JobQueue e a
 
 data ActionForJob a = (Unit a) => Execute (Job a) | Delete | Skip
@@ -72,7 +68,6 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
   where
     handleSome :: SomeException -> IO (Maybe (JobResult a))
     handleSome e = return Nothing
-      -- auxHandleFailure env Error (show e) (show e) (Just currentJob)
 
 afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of

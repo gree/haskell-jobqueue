@@ -42,6 +42,7 @@ Library
                  , HDBC-sqlite3
                  , fast-logger
                  , monad-logger
+                 , template-haskell
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class

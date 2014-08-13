@@ -4,7 +4,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Monad
-import Control.Monad.Logger
 import System.Log.Logger
 import System.Log.Handler.Syslog
 import System.Environment hiding (getEnv)
