@@ -1,6 +1,8 @@
 -- Copyright (c) Gree, Inc. 2013
 -- License: MIT-style
 
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.JobQueue.Action (
     JobActionState
   , buildActionState
@@ -17,12 +19,8 @@ module Network.JobQueue.Action (
   , forkInTime
   , forkOnTime
   , abort
-  , logMsg
   , commitIO
-  , Alert(..)
   ) where
-
-import System.Log.Logger
 
 import Control.Applicative
 import Control.Monad.Error
@@ -87,7 +85,7 @@ param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a (b)
 param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
-    Nothing -> abort Critical $ "internal error. no parse: " ++ show (key, defaultValue)
+    Nothing -> abort (LevelOther "critical") $ "internal error. no parse: " ++ show (key, defaultValue)
     Just defaultValue' -> case lookup key (envParameters env) of
       Just value -> return (fromMaybe defaultValue' (maybeRead value))
       Nothing -> return (defaultValue')
@@ -165,21 +163,10 @@ none = result Nothing
      If a critical problem is found and there is a need to switch to the failure state,
      call this function with a human readable meassage.
 -}
-abort :: (Env e, Unit a) => Alert -> String -> ActionM e a b
+abort :: (Env e, Unit a) => LogLevel -> String -> ActionM e a b
 abort level msg = do
   result $ Just $ Left $ Failure level msg
   throwError $ ActionError level msg
-
-{- | Put a message to syslog daemon.
--}
-logMsg :: (Env e, Unit a) => Alert -> String -> ActionM e a ()
-logMsg level msg = liftIO $ case level of
-  Critical -> criticalM "control" msg
-  Error -> errorM "control" msg
-  Warning -> warningM "control" msg
-  Notice -> noticeM "control" msg
-  Info -> infoM "control" msg
-  -- _ -> infoM "control" msg
 
 ---------------------------------------------------------------- PRIVATE
 

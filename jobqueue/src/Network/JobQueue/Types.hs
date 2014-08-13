@@ -16,7 +16,7 @@ module Network.JobQueue.Types
   , Next(..)  
   , Failure(..)
   , JobResult
-  , Alert(..)
+  , LogLevel(..)
   , setNextJob
   , setNextJobIfEmpty
   , addForkJob
@@ -38,14 +38,14 @@ import Network.JobQueue.Class
 
 -------------------------------- Types
 
-data Alert = Critical | Error | Warning | Notice | Info deriving (Show)
+-- data Alert = Critical | Error | Warning | Notice | Info deriving (Show)
 
 data Next a = Next
   { nextJob :: (Maybe a)
   , nextForks :: [(a, Maybe UTCTime)]
   }
 
-data Failure = Failure Alert String
+data Failure = Failure LogLevel String
 
 -------------------------------- JobResult
 
@@ -83,11 +83,11 @@ instance Default (JobActionState e a) where
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
   deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
 
-data ActionError = ActionError Alert String
+data ActionError = ActionError LogLevel String
   deriving (Show)
 
 instance Error ActionError where
-  strMsg = ActionError Warning
+  strMsg = ActionError LevelWarn
 
 data ActionEnv e a = ActionEnv {
     getJobEnv :: e

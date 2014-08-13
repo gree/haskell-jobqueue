@@ -1,3 +1,5 @@
+-- Copyright (c) Gree, Inc. 2014
+-- License: MIT-style
 
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -21,17 +23,18 @@ class Aux a where
     where
       defaultOutput h loc src level msg = do
         progName <- getProgName
-        log level progName $ S8.unpack $ fromLogStr $ defaultLogStr loc src level msg
+        logFunc level progName $ S8.unpack $ fromLogStr $ defaultLogStr loc src level msg
 
-      log level = case level of
+      logFunc level = case level of
           LevelDebug -> debugM
           LevelInfo -> infoM
           LevelWarn -> warningM
           LevelError -> errorM
           LevelOther "notice" -> noticeM
+          LevelOther "critical" -> criticalM
           LevelOther _ -> warningM
 
-  auxHandleFailure :: (Unit b) => a -> Alert -> String -> String -> Maybe (Job b) -> IO (Maybe (Job b))
+  auxHandleFailure :: (Unit b) => a -> LogLevel -> String -> String -> Maybe (Job b) -> IO (Maybe (Job b))
   auxHandleFailure _ _al _subject msg mjob = do
     hPutStrLn stderr msg
     hFlush stderr

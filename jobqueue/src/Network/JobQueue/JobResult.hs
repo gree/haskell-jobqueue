@@ -10,7 +10,6 @@ module Network.JobQueue.JobResult (
   , returnInTime
   , returnFork
   , returnReschedule
-  , Alert(..)
   ) where
 
 import Data.Time.Clock
@@ -18,7 +17,7 @@ import Data.Time.Clock
 import Network.JobQueue.Types
 
 
-returnFailure :: Alert -> String -> IO (Maybe (JobResult a))
+returnFailure :: LogLevel -> String -> IO (Maybe (JobResult a))
 returnFailure alertLevel msg = return $ Just $ Left $ Failure alertLevel msg
 
 returnFinished :: IO (Maybe (JobResult a))

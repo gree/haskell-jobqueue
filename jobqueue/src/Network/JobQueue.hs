@@ -91,7 +91,7 @@ module Network.JobQueue (
   , ActionM
   , JobM
   , JobActionState
-  , Alert(..)
+  , LogLevel(..)
   , process
   , createJob
   , fin
@@ -104,7 +104,6 @@ module Network.JobQueue (
   , abort
   , getEnv
   , param
-  , logMsg
   , commitIO
   , module Network.JobQueue.Class
   , module Network.JobQueue.Aux
@@ -114,7 +113,6 @@ module Network.JobQueue (
 import Prelude hiding (log)
 import Control.Exception
 import Control.Monad
-import Data.Default
 
 import Network.JobQueue.Types
 import Network.JobQueue.Class
@@ -122,6 +120,7 @@ import Network.JobQueue.Aux
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
+import Control.Monad.Logger (LogLevel(..))
 
 {- | Build a function that takes a function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
 
