@@ -174,7 +174,8 @@ none = result Nothing
 -}
 abort :: (Env e, Unit a) => ActionM e a b
 abort = do
-  throwError $ AbortError "aborted"
+  ju <- getJobUnit <$> ask
+  throwError $ AbortError ("aborted on " ++ desc ju)
 
 ---------------------------------------------------------------- PRIVATE
 
