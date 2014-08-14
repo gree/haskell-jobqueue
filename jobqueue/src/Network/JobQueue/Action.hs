@@ -31,7 +31,6 @@ import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger
 
-import qualified Data.Text as T
 import Data.Maybe
 import Data.Time.Clock
 import Data.Default (Default, def)
@@ -72,7 +71,7 @@ runAction env ju action = do
   return $ either (const Nothing) (const $ r) e
 
 defaultHandler :: (Env e, Unit a) => ActionError -> ActionM e a ()
-defaultHandler (ActionError al msg) = result (Just $ Left $ Failure al msg)
+defaultHandler (AbortError _) = result (Just $ Left $ Failure)
 
 --------------------------------
 
@@ -171,7 +170,8 @@ none = result Nothing
      call this function.
 -}
 abort :: (Env e, Unit a) => ActionM e a b
-abort = throwError $ AbortError
+abort = do
+  throwError $ AbortError "aborted"
 
 ---------------------------------------------------------------- PRIVATE
 

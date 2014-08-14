@@ -43,7 +43,7 @@ data Next a = Next
   , nextForks :: [(a, Maybe UTCTime)]
   }
 
-data Failure = Failure LogLevel String
+data Failure = Failure
 
 -------------------------------- JobResult
 
@@ -81,11 +81,11 @@ instance Default (JobActionState e a) where
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
   deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
 
-data ActionError = ActionError LogLevel String | AbortError
+data ActionError = AbortError String
   deriving (Show)
 
 instance Error ActionError where
-  strMsg = ActionError LevelWarn
+  strMsg = AbortError
 
 data ActionEnv e a = ActionEnv
   { getJobEnv :: e

@@ -10,6 +10,7 @@ module Network.JobQueue.Logger
   , logError
   , logNotice
   , logCritical
+  , Only
   ) where
 
 import qualified Data.Text as T

@@ -17,8 +17,8 @@ import Data.Time.Clock
 import Network.JobQueue.Types
 
 
-returnFailure :: LogLevel -> String -> IO (Maybe (JobResult a))
-returnFailure alertLevel msg = return $ Just $ Left $ Failure alertLevel msg
+returnFailure :: IO (Maybe (JobResult a))
+returnFailure = return $ Just $ Left $ Failure
 
 returnFinished :: IO (Maybe (JobResult a))
 returnFinished = return $ Just $ Right $ Next Nothing []

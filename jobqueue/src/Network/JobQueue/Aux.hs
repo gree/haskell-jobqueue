@@ -32,10 +32,8 @@ class Aux a where
         LevelOther "critical" -> criticalM
         LevelOther _ -> warningM
 
-  auxHandleFailure :: (Unit b) => a -> LogLevel -> String -> String -> Maybe (Job b) -> IO (Maybe (Job b))
-  auxHandleFailure _ _al _subject msg mjob = do
-    hPutStrLn stderr msg
-    hFlush stderr
+  auxHandleFailure :: (Unit b) => a -> Maybe (Job b) -> IO (Maybe (Job b))
+  auxHandleFailure _ mjob = do
     case mjob of
       Just job -> Just <$> createJob Runnable (getRecovery (jobUnit job))
       Nothing -> return (Nothing)

@@ -82,9 +82,8 @@ afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
           return ()
       forM_ (reverse forks) $ \f -> case f of
         (forked, ontime) -> rescheduleJob jqueue ontime forked
-    Left (Failure alert msg) -> do
-      let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] " ++ msg
-      n <- auxHandleFailure env alert subject msg (Just currentJob)
+    Left Failure -> do
+      n <- auxHandleFailure env (Just currentJob)
       recover n
   Nothing -> do
     -- let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] aborted"
