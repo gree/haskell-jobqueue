@@ -66,8 +66,9 @@ runAction env ju action = do
          $ flip runReaderT (ActionEnv env ju)
          $ runErrorT
          $ flip runLoggingT (auxLogger env)
-         $ runAM
-         $ action `catchError` defaultHandler
+         $ runAM $ do
+             when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]
+             action `catchError` defaultHandler
   return $ either (const Nothing) (const $ r) e
 
 defaultHandler :: (Env e, Unit a) => ActionError -> ActionM e a ()

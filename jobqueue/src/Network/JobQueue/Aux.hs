@@ -40,9 +40,3 @@ class Aux a where
 
   auxHandleAfterExecute :: (Unit b) => a -> Job b -> IO ()
   auxHandleAfterExecute _ _job = return ()
-
-  auxHandleLogging :: (Unit b) => a -> Job b -> IO ()
-  auxHandleLogging _ job = do
-    hPutStrLn stderr $ show job
-    hFlush stderr
-    return ()
