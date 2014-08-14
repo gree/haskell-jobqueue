@@ -66,7 +66,7 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
       return (Nothing)
   where
     handleSome :: SomeException -> IO (Maybe (JobResult a))
-    handleSome e = return Nothing
+    handleSome _e = return Nothing
 
 afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of

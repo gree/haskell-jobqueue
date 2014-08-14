@@ -7,7 +7,6 @@ module Network.JobQueue.AuxClass where
 
 import Control.Monad.Logger
 import Control.Applicative
-import System.IO
 import System.Log.FastLogger
 import System.Log.Logger
 import System.Environment (getProgName)

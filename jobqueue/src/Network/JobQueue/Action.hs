@@ -25,13 +25,12 @@ module Network.JobQueue.Action (
   ) where
 
 import Control.Applicative
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger
-import Control.Monad.Trans (liftIO)
 
 import Data.Maybe
 import Data.Time.Clock
@@ -66,7 +65,7 @@ runAction :: (Aux e, Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (Jo
 runAction env ju action = do
   (e,r) <- flip runStateT Nothing
          $ flip runReaderT (ActionEnv env ju)
-         $ runErrorT
+         $ runExceptT
          $ flip runLoggingT (auxLogger env)
          $ runAM $ do
              when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]

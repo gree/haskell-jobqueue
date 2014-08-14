@@ -28,7 +28,7 @@ module Network.JobQueue.Types
 
 import Data.Time.Clock
 
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Logger
@@ -84,9 +84,6 @@ newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e 
 data ActionError = AbortError String
   deriving (Show)
 
-instance Error ActionError where
-  strMsg = AbortError
-
 data ActionEnv e a = ActionEnv
   { getJobEnv :: e
   , getJobUnit :: a
@@ -94,7 +91,7 @@ data ActionEnv e a = ActionEnv
 
 type JobResultState a = Maybe (JobResult a)
 
-newtype ActionM e a b = ActionM { runAM :: LoggingT (ErrorT ActionError (ReaderT (ActionEnv e a) (StateT (JobResultState a) IO))) b }
+newtype ActionM e a b = ActionM { runAM :: LoggingT (ExceptT ActionError (ReaderT (ActionEnv e a) (StateT (JobResultState a) IO))) b }
   deriving ( Monad, MonadIO, MonadLogger, Functor
            , MonadReader (ActionEnv e a), MonadState (JobResultState a), MonadError ActionError)
 

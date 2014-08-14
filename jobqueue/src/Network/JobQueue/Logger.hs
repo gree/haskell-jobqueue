@@ -3,8 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.JobQueue.Logger
-  ( LogLevel(..)
-  , logDebug
+  ( logDebug
   , logInfo
   , logWarn
   , logError
@@ -16,12 +15,10 @@ module Network.JobQueue.Logger
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Control.Monad.Logger as ML
-import Language.Haskell.TH.Syntax (Lift (lift), Q, Exp, Loc (..), qLocation)
+import Language.Haskell.TH.Syntax (Q, Exp, qLocation)
 import Data.Text.Format
 
-type LogLevel = ML.LogLevel
-
-logTH :: LogLevel -> Q Exp
+logTH :: ML.LogLevel -> Q Exp
 logTH level = [|\a b -> ML.monadLoggerLog $(qLocation >>= ML.liftLoc) (T.pack "") level (LT.toStrict $ format (a :: Format) b)|]
 
 logDebug :: Q Exp

@@ -25,7 +25,7 @@ Flag sample
 Library
   Ghc-Options:     -Wall
   Build-Depends:   base                     >= 4 && < 5
-                 , mtl
+                 , mtl                      > 2.2
                  , network                  >= 2.3.2
                  , hslogger
                  , text
