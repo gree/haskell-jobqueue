@@ -43,6 +43,7 @@ data JobEnv = JobEnv {
   } deriving (Eq, Show)
 
 instance Env JobEnv where
+instance Aux JobEnv where
 ```
 
 Define states that describe your state machine.
