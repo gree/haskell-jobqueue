@@ -106,7 +106,7 @@ module Network.JobQueue (
   , commitIO
   , liftIO
   , module Network.JobQueue.Class
-  , module Network.JobQueue.Aux
+  , module Network.JobQueue.AuxClass
   , module Network.JobQueue.JobQueue
   , module Network.JobQueue.Logger
   ) where
@@ -117,7 +117,7 @@ import Control.Monad
 
 import Network.JobQueue.Types
 import Network.JobQueue.Class
-import Network.JobQueue.Aux
+import Network.JobQueue.AuxClass
 import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job

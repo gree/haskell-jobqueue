@@ -29,7 +29,7 @@ import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 
 import Network.JobQueue.Class
-import Network.JobQueue.Aux
+import Network.JobQueue.AuxClass
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job

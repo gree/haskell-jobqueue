@@ -49,7 +49,7 @@ Library
                  , Network.JobQueue.Class
                  , Network.JobQueue.Types
                  , Network.JobQueue.Action
-                 , Network.JobQueue.Aux
+                 , Network.JobQueue.AuxClass
                  , Network.JobQueue.Job
                  , Network.JobQueue.Job.Internal
                  , Network.JobQueue.JobQueue

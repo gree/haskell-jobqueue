@@ -15,7 +15,7 @@ module Network.JobQueue.Job (
 import Control.Monad.State hiding (state)
 
 import Network.JobQueue.Class
-import Network.JobQueue.Aux
+import Network.JobQueue.AuxClass
 import Network.JobQueue.Types
 import Network.JobQueue.Action
 import Network.JobQueue.Job.Internal

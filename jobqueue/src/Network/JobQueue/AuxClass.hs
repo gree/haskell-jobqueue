@@ -3,7 +3,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.JobQueue.Aux where
+module Network.JobQueue.AuxClass where
 
 import Control.Monad.Logger
 import Control.Applicative

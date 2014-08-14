@@ -38,7 +38,7 @@ import Data.Time.Clock
 import Data.Default (Default, def)
 
 import Network.JobQueue.Class
-import Network.JobQueue.Aux
+import Network.JobQueue.AuxClass
 import Network.JobQueue.Types
 import Network.JobQueue.Logger
 
