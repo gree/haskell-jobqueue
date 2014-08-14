@@ -104,6 +104,7 @@ module Network.JobQueue (
   , getEnv
   , param
   , commitIO
+  , liftIO
   , module Network.JobQueue.Class
   , module Network.JobQueue.Aux
   , module Network.JobQueue.JobQueue

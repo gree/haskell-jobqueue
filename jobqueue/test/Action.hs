@@ -52,13 +52,13 @@ testAction backend = do
       let withJobQueue = buildJobQueue backend "/abort_and_recover_1" $ do
             process $ \Initial -> do
               $(logWarn) "XXX" ()
-              commitIO $ atomically $ writeTVar var 1
+              liftIO $ atomically $ writeTVar var 1
               abort
               $(logWarn) "YYY" ()
-              commitIO $ atomically $ writeTVar var 2
+              liftIO $ atomically $ writeTVar var 2
               fin
             process $ \Recovery -> do
-              commitIO $ atomically $ writeTVar var 3
+              liftIO $ atomically $ writeTVar var 3
               fin
       withJobQueue $ \jq -> do
         scheduleJob jq Initial

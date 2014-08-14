@@ -21,6 +21,7 @@ module Network.JobQueue.Action (
   , forkOnTime
   , abort
   , commitIO
+  , liftIO
   ) where
 
 import Control.Applicative
@@ -30,6 +31,7 @@ import Control.Monad.State
 import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger
+import Control.Monad.Trans (liftIO)
 
 import Data.Maybe
 import Data.Time.Clock
