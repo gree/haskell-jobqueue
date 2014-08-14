@@ -19,6 +19,7 @@ before_install:
 install:
  - cabal update
  - cabal install happy
+ - cabal install 'double-conversion < 1'
  - cabal install --only-dependencies --enable-tests --enable-benchmarks --extra-include-dirs=/usr/include/zookeeper
 
 script:
