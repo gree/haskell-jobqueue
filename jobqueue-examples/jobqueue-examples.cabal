@@ -1,0 +1,54 @@
+Name:           jobqueue-examples
+Version:        0.0.1
+Synopsis:       A job queue library
+License:        MIT
+License-File:   LICENSE
+Author:         Kiyoshi Ikehara
+Maintainer:     kiyoshi.ikehara at gree.net
+Copyright:      GREE, Inc.
+Build-Type:     Simple
+Category:       Network, Client
+Cabal-Version:  >=1.8
+Description:
+  Haskell JobQueue is a library used for building a job scheduler with priority queues.
+  The state of jobs is stored in a backend database such as Apache Zookeeper or other 
+  highly reliable message queue systems.
+
+Source-Repository head
+  type:     git
+  location: https://github.com/gree/haskell-jobqueue.git
+
+Executable jobqueue-sample-fibonacci
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , network
+                 , bytestring
+                 , containers
+                 , transformers
+                 , data-default
+  Main-is:         fibonacci.hs
+  Extensions:      DeriveDataTypeable
+
+Executable jobqueue-sample-priority
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , network
+                 , bytestring
+                 , containers
+                 , transformers
+                 , data-default
+  Main-is:         priority.hs
+  Extensions:      DeriveDataTypeable
+
+Executable jobqueue-sample-suspend
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , bytestring
+                 , containers
+                 , data-default
+  Main-is:         suspend.hs
+  Extensions:      DeriveDataTypeable
+
