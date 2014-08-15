@@ -11,7 +11,6 @@ module Network.JobQueue.Action (
   , runAction
   , getEnv
   , param
-  , result
   , next
   , orNext
   , fin
@@ -106,19 +105,14 @@ param (key, defaultValue) = do
 -}
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
 commitIO action = do
-  s <- get
-  when (getCommits (fromMaybe def s) > 0) $ do
-    ju <- getJobUnit <$> ask
-    $(logWarn) "commitIO called twice! ({})" [desc ju]
+  do s <- get
+     when (getCommits (fromMaybe def s) > 0) $ do
+       ju <- getJobUnit <$> ask
+       $(logWarn) "commitIO called twice! ({})" [desc ju]
   modify $ \s -> Just $ incrementCommits $ fromMaybe def s
   liftIO action
 
 ----------------
-
-{- | Set the result of the action. (for internal use)
--}
-result :: (Env e, Unit a) => Maybe (JobResult a) -> ActionM e a ()
-result = modify . setResult
 
 {- | Create a job with a unit and schedule it.
 -}
@@ -183,6 +177,11 @@ abort = do
   throwError $ AbortError ("aborted on " ++ desc ju)
 
 ---------------------------------------------------------------- PRIVATE
+
+{- | Set the result of the action. (for internal use)
+-}
+result :: (Env e, Unit a) => Maybe (JobResult a) -> ActionM e a ()
+result = modify . setResult
 
 forkWith :: (Env e, Unit a) => a -> Maybe UTCTime -> ActionM e a ()
 forkWith ju mt = modify $ \s -> Just $ addForkJob (ju, mt) $ fromMaybe def s
