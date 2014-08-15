@@ -13,7 +13,7 @@ module Network.JobQueue.Types
   , ActionError(..)
   , ActionEnv(..)
   , Unit(..)
-  , Next(..)  
+  , Next(..)
   , Failure(..)
   , JobResult
   , LogLevel(..)

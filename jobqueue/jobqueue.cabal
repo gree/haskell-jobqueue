@@ -50,7 +50,6 @@ Library
                  , Network.JobQueue.Job.Internal
                  , Network.JobQueue.JobQueue
                  , Network.JobQueue.JobQueue.Internal
-                 , Network.JobQueue.JobResult
                  , Network.JobQueue.Backend
                  , Network.JobQueue.Backend.Class
                  , Network.JobQueue.Backend.Types

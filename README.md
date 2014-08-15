@@ -11,8 +11,8 @@ How to install
 Execute the cabal install command and the library and example programs will be placed into your .cabal directory.
 
     > cd haskell-jobqueue/
-    > cabal install --only-dependencies --extra-include-dirs=/usr/local/include/zookeeper # if you use brew on Mac OSX
-    > cabal install --fsample
+    > cabal install jobqueue/ --only-dependencies --extra-include-dirs=/usr/local/include/zookeeper # if you use brew on Mac OSX
+    > cabal install jobqueue/ jobqueue-examples/
 
 How to use
 ----------
@@ -88,11 +88,6 @@ main = do
 
 Examples
 --------
-
-Please checkout the source and install examples using cabal.
-
-    > git clone ...
-    > cabal install jobqueue/ jobqueue-examples/
 
 ### Example 1. Hello, World
 
