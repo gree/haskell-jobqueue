@@ -30,7 +30,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Exception (catch)
 import Control.Exception.Base (PatternMatchFail(..))
-import Control.Monad.Logger
+import Control.Monad.Logger (runLoggingT)
 
 import Data.Maybe
 import Data.Time.Clock
@@ -106,6 +106,10 @@ param (key, defaultValue) = do
 -}
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
 commitIO action = do
+  s <- get
+  when (getCommits (fromMaybe def s) > 0) $ do
+    ju <- getJobUnit <$> ask
+    $(logWarn) "commitIO called twice! ({})" [desc ju]
   modify $ \s -> Just $ incrementCommits $ fromMaybe def s
   liftIO action
 
