@@ -71,7 +71,7 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
 afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
   Just res -> case res of
-    Right (Next mNextJu forks) -> do
+    Right (RS mNextJu forks _) -> do
       case mNextJu of
         Just nextJu -> do
           _r <- updateJob jqueue nodeName currentJob { jobState = Runnable, jobUnit = nextJu } (version+1)
@@ -84,6 +84,9 @@ afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
     Left Failure -> do
       n <- auxHandleFailure env (Just currentJob)
       recover n
+    Left Retriable -> do
+      _r <- updateJob jqueue nodeName currentJob { jobState = Runnable } (version+1)
+      return ()
   Nothing -> do
     -- let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] aborted"
     -- n <- (failureHandleFn jqueue) Critical subject (desc (jobUnit currentJob))

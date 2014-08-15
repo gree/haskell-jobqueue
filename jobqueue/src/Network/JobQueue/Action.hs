@@ -69,11 +69,12 @@ runAction env ju action = do
          $ flip runLoggingT (auxLogger env)
          $ runAM $ do
              when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]
-             action `catchError` defaultHandler
+             action `catchError` handleActionError
   return $ either (const Nothing) (const $ r) e
 
-defaultHandler :: (Env e, Unit a) => ActionError -> ActionM e a ()
-defaultHandler (AbortError _) = result (Just $ Left $ Failure)
+handleActionError :: (Env e, Unit a) => ActionError -> ActionM e a ()
+handleActionError (AbortError _) = do
+  result $ Just $ Left $ Failure
 
 --------------------------------
 
@@ -105,6 +106,7 @@ param (key, defaultValue) = do
 -}
 commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
 commitIO action = do
+  modify $ \s -> Just $ incrementCommits $ fromMaybe def s
   liftIO action
 
 ----------------

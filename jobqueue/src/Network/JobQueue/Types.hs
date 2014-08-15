@@ -13,13 +13,15 @@ module Network.JobQueue.Types
   , ActionError(..)
   , ActionEnv(..)
   , Unit(..)
-  , Next(..)
+  , RuntimeState(..)
   , Failure(..)
   , JobResult
   , LogLevel(..)
   , setNextJob
   , setNextJobIfEmpty
   , addForkJob
+  , incrementCommits
+  , getCommits
   , runS
   , runAM
   , addAction
@@ -38,31 +40,40 @@ import Network.JobQueue.Class
 
 -------------------------------- Types
 
-data Next a = Next
-  { nextJob :: (Maybe a)
-  , nextForks :: [(a, Maybe UTCTime)]
+data RuntimeState a = RS
+  { rsNextJob :: (Maybe a)
+  , rsNextForks :: [(a, Maybe UTCTime)]
+  , rsCommits :: Int
   }
 
-data Failure = Failure
+data Failure = Failure | Retriable
 
 -------------------------------- JobResult
 
-type JobResult a = Either Failure (Next a)
+type JobResult a = Either Failure (RuntimeState a)
 
 instance (Unit a) => Default (JobResult a) where
-  def = Right $ Next Nothing []
+  def = Right $ RS Nothing [] 0
 
 setNextJob :: (Unit a) => a -> (JobResult a) -> (JobResult a)
-setNextJob x (Right next@(Next _ _xs)) = Right next { nextJob = Just x }
+setNextJob x (Right next@(RS _ _ _)) = Right next { rsNextJob = Just x }
 setNextJob _ jr@(Left _) = jr
 
 setNextJobIfEmpty :: (Unit a) => a -> (JobResult a) -> (JobResult a)
-setNextJobIfEmpty x jr@(Right next@(Next mju _xs)) = maybe (Right next { nextJob = Just x }) (const jr) mju
+setNextJobIfEmpty x jr@(Right next@(RS mju _ _)) = maybe (Right next { rsNextJob = Just x }) (const jr) mju
 setNextJobIfEmpty _ jr@(Left _) = jr
 
 addForkJob :: (Unit a) => (a, Maybe UTCTime) -> (JobResult a) -> (JobResult a)
-addForkJob (x, mt) (Right next@(Next _ju xs)) = Right next { nextForks = ((x, mt):xs) }
+addForkJob (x, mt) (Right next@(RS _ xs _)) = Right next { rsNextForks = ((x, mt):xs) }
 addForkJob (_, _) jr@(Left _) = jr
+
+incrementCommits :: (Unit a) => (JobResult a) -> (JobResult a)
+incrementCommits (Right next@(RS _ _ cnt)) = Right next { rsCommits = cnt + 1 }
+incrementCommits jr@(Left _) = jr
+
+getCommits :: (Unit a) => (JobResult a) -> Int
+getCommits (Right (RS _ _ cnt)) = cnt
+getCommits (Left _) = 0
 
 -------------------------------- JobActionState
 
