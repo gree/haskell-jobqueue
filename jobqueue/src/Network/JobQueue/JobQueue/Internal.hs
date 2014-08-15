@@ -81,7 +81,7 @@ afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
           return ()
       forM_ (reverse forks) $ \f -> case f of
         (forked, ontime) -> rescheduleJob jqueue ontime forked
-    Left Failure -> do
+    Left (Failure _msg) -> do
       n <- auxHandleFailure env (Just currentJob)
       recover n
     Left Retriable -> do

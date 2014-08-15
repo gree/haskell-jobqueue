@@ -44,9 +44,7 @@ buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
 buildActionState jobs = execStateT (runS jobs) (JobActionState [])
 
 runActionState :: (Env e, Unit a) => JobActionState e a -> ActionFn e a
-runActionState (JobActionState { jobActions = actions } ) env ju = do
-  mjr <- runActionState' actions
-  return (mjr)
+runActionState (JobActionState { jobActions = actions } ) env ju = runActionState' actions
   where
     runActionState' actions' = case actions' of
       [] -> return (Nothing)
@@ -174,8 +172,8 @@ none = result Nothing
 -}
 abort :: (Env e, Unit a) => ActionM e a b
 abort = do
-  -- ju <- getJobUnit <$> ask
-  throwError $ Failure -- ("aborted on " ++ desc ju)
+  ju <- getJobUnit <$> ask
+  throwError $ Failure ("aborted on " ++ desc ju)
 
 ---------------------------------------------------------------- PRIVATE
 

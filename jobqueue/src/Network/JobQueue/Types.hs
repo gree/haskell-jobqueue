@@ -44,7 +44,7 @@ data RuntimeState a = RS
   , rsCommits :: Int
   }
 
-data Break = Failure | Retriable
+data Break = Failure String | Retriable
 
 -------------------------------- State in Action
 
