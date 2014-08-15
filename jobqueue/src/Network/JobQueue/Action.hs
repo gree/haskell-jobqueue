@@ -43,7 +43,7 @@ import Network.JobQueue.Logger
 buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
 buildActionState jobs = execStateT (runS jobs) (JobActionState [])
 
-runActionState :: (Env e, Unit a) => JobActionState e a -> e -> a -> IO (Maybe (JobResult a))
+runActionState :: (Env e, Unit a) => JobActionState e a -> ActionFn e a
 runActionState (JobActionState { jobActions = actions } ) env ju = do
   mjr <- runActionState' actions
   return (mjr)
@@ -56,11 +56,12 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
           Nothing -> runActionState' acts
           Just _ -> return (r)
 
-    handleFail :: PatternMatchFail -> IO (Maybe (JobResult a))
+    handleFail :: PatternMatchFail -> IO (Maybe (Either Break (RuntimeState a)))
     handleFail (PatternMatchFail _msg) = do
       return (Nothing)
 
-runAction :: (Aux e, Env e, Unit a) => e -> a -> ActionM e a () -> IO (Maybe (JobResult a))
+runAction :: (Aux e, Env e, Unit a) => 
+             e -> a -> ActionM e a () -> IO (Maybe (Either Break (RuntimeState a)))
 runAction env ju action = do
   (e,r) <- flip runStateT Nothing
          $ flip runReaderT (ActionEnv env ju)
@@ -68,12 +69,12 @@ runAction env ju action = do
          $ flip runLoggingT (auxLogger env)
          $ runAM $ do
              when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]
-             action `catchError` handleActionError
-  return $ either (const Nothing) (const $ r) e
-
-handleActionError :: (Env e, Unit a) => ActionError -> ActionM e a ()
-handleActionError (AbortError _) = do
-  result $ Just $ Left $ Failure
+             action
+  case e of
+    Left b -> return $ Just $ Left b
+    Right () -> case r of
+      Just r' -> return $ Just $ Right r'
+      Nothing -> return Nothing
 
 --------------------------------
 
@@ -173,14 +174,14 @@ none = result Nothing
 -}
 abort :: (Env e, Unit a) => ActionM e a b
 abort = do
-  ju <- getJobUnit <$> ask
-  throwError $ AbortError ("aborted on " ++ desc ju)
+  -- ju <- getJobUnit <$> ask
+  throwError $ Failure -- ("aborted on " ++ desc ju)
 
 ---------------------------------------------------------------- PRIVATE
 
 {- | Set the result of the action. (for internal use)
 -}
-result :: (Env e, Unit a) => Maybe (JobResult a) -> ActionM e a ()
+result :: (Env e, Unit a) => Maybe (RuntimeState a) -> ActionM e a ()
 result = modify . setResult
 
 forkWith :: (Env e, Unit a) => a -> Maybe UTCTime -> ActionM e a ()

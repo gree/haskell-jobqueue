@@ -53,7 +53,7 @@ peekJob' JobQueue { jqBackendQueue = bq } = do
         Nothing -> return (Nothing)
         Just job -> return (Just (job, nodeName, idName, version))
 
-executeJob' :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Maybe (JobResult a))
+executeJob' :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Maybe (Either Break (RuntimeState a)))
 executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState } env nodeName currentJob version = do
   currentTime <- getCurrentTime
   if jobOnTime currentJob < currentTime
@@ -65,10 +65,10 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
       when r $ void $ writeQueue bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
       return (Nothing)
   where
-    handleSome :: SomeException -> IO (Maybe (JobResult a))
+    handleSome :: SomeException -> IO (Maybe (Either Break (RuntimeState a)))
     handleSome _e = return Nothing
 
-afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (JobResult a) -> IO ()
+afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (Either Break (RuntimeState a)) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
   Just res -> case res of
     Right (RS mNextJu forks _) -> do

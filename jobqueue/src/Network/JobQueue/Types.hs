@@ -10,12 +10,10 @@ module Network.JobQueue.Types
   , JobM
   , ActionM
   , ActionFn
-  , ActionError(..)
   , ActionEnv(..)
   , Unit(..)
   , RuntimeState(..)
-  , Failure(..)
-  , JobResult
+  , Break(..)
   , LogLevel(..)
   , setNextJob
   , setNextJobIfEmpty
@@ -46,38 +44,31 @@ data RuntimeState a = RS
   , rsCommits :: Int
   }
 
-data Failure = Failure | Retriable
+data Break = Failure | Retriable
 
--------------------------------- JobResult
+-------------------------------- State in Action
 
-type JobResult a = Either Failure (RuntimeState a)
+instance (Unit a) => Default (RuntimeState a) where
+  def = RS Nothing [] 0
 
-instance (Unit a) => Default (JobResult a) where
-  def = Right $ RS Nothing [] 0
+setNextJob :: (Unit a) => a -> (RuntimeState a) -> (RuntimeState a)
+setNextJob x next@(RS _ _ _) = next { rsNextJob = Just x }
 
-setNextJob :: (Unit a) => a -> (JobResult a) -> (JobResult a)
-setNextJob x (Right next@(RS _ _ _)) = Right next { rsNextJob = Just x }
-setNextJob _ jr@(Left _) = jr
+setNextJobIfEmpty :: (Unit a) => a -> (RuntimeState a) -> (RuntimeState a)
+setNextJobIfEmpty x next@(RS mju _ _) = maybe (next { rsNextJob = Just x }) (const next) mju
 
-setNextJobIfEmpty :: (Unit a) => a -> (JobResult a) -> (JobResult a)
-setNextJobIfEmpty x jr@(Right next@(RS mju _ _)) = maybe (Right next { rsNextJob = Just x }) (const jr) mju
-setNextJobIfEmpty _ jr@(Left _) = jr
+addForkJob :: (Unit a) => (a, Maybe UTCTime) -> (RuntimeState a) -> (RuntimeState a)
+addForkJob (x, mt) next@(RS _ xs _) = next { rsNextForks = ((x, mt):xs) }
 
-addForkJob :: (Unit a) => (a, Maybe UTCTime) -> (JobResult a) -> (JobResult a)
-addForkJob (x, mt) (Right next@(RS _ xs _)) = Right next { rsNextForks = ((x, mt):xs) }
-addForkJob (_, _) jr@(Left _) = jr
+incrementCommits :: (Unit a) => (RuntimeState a) -> (RuntimeState a)
+incrementCommits next@(RS _ _ cnt) = next { rsCommits = cnt + 1 }
 
-incrementCommits :: (Unit a) => (JobResult a) -> (JobResult a)
-incrementCommits (Right next@(RS _ _ cnt)) = Right next { rsCommits = cnt + 1 }
-incrementCommits jr@(Left _) = jr
-
-getCommits :: (Unit a) => (JobResult a) -> Int
-getCommits (Right (RS _ _ cnt)) = cnt
-getCommits (Left _) = 0
+getCommits :: (Unit a) => (RuntimeState a) -> Int
+getCommits (RS _ _ cnt) = cnt
 
 -------------------------------- JobActionState
 
-type ActionFn e a = e -> a -> IO (Maybe (JobResult a))
+type ActionFn e a = e -> a -> IO (Maybe (Either Break (RuntimeState a)))
 
 data JobActionState e a = JobActionState { jobActions :: [ActionFn e a] }
 
@@ -92,21 +83,17 @@ instance Default (JobActionState e a) where
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
   deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
 
-data ActionError = AbortError String
-  deriving (Show)
-
 data ActionEnv e a = ActionEnv
   { getJobEnv :: e
   , getJobUnit :: a
   }
 
-type JobResultState a = Maybe (JobResult a)
+newtype ActionM e a b = ActionM
+  { runAM :: LoggingT (ExceptT Break (ReaderT (ActionEnv e a) (StateT (Maybe (RuntimeState a)) IO))) b
+  } deriving ( Monad, MonadIO, MonadLogger, Functor, MonadError Break
+           , MonadReader (ActionEnv e a), MonadState (Maybe (RuntimeState a)))
 
-newtype ActionM e a b = ActionM { runAM :: LoggingT (ExceptT ActionError (ReaderT (ActionEnv e a) (StateT (JobResultState a) IO))) b }
-  deriving ( Monad, MonadIO, MonadLogger, Functor
-           , MonadReader (ActionEnv e a), MonadState (JobResultState a), MonadError ActionError)
-
-setResult :: (Unit a) => Maybe (JobResult a) -> JobResultState a -> JobResultState a
+setResult :: (Unit a) => Maybe (RuntimeState a) -> Maybe (RuntimeState a) -> Maybe (RuntimeState a)
 setResult result _ = result
 
 --------------------------------
