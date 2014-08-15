@@ -63,10 +63,10 @@ runActionState (JobActionState { jobActions = actions } ) env ju = do
 runAction :: (Aux e, Env e, Unit a) => 
              e -> a -> ActionM e a () -> IO (Maybe (Either Break (RuntimeState a)))
 runAction env ju action = do
-  (e,r) <- flip runStateT Nothing
+  (e,r) <- flip runLoggingT (auxLogger env)
+         $ flip runStateT Nothing
          $ flip runReaderT (ActionEnv env ju)
          $ runExceptT
-         $ flip runLoggingT (auxLogger env)
          $ runAM $ do
              when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]
              action

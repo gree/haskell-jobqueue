@@ -89,7 +89,7 @@ data ActionEnv e a = ActionEnv
   }
 
 newtype ActionM e a b = ActionM
-  { runAM :: LoggingT (ExceptT Break (ReaderT (ActionEnv e a) (StateT (Maybe (RuntimeState a)) IO))) b
+  { runAM :: ExceptT Break (ReaderT (ActionEnv e a) (StateT (Maybe (RuntimeState a)) (LoggingT IO))) b
   } deriving ( Monad, MonadIO, MonadLogger, Functor, MonadError Break
            , MonadReader (ActionEnv e a), MonadState (Maybe (RuntimeState a)))
 
