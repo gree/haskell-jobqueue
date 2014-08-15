@@ -3,6 +3,7 @@ Haskell JobQueue
 ================
 
 JobQueue is a simple job queue library based on prioritized FCFS scheduling.
+This is useful when you want to write a reliable batch system.
 
 How to install
 --------------
@@ -42,8 +43,8 @@ data JobEnv = JobEnv {
     jeHello      :: String
   } deriving (Eq, Show)
 
-instance Env JobEnv where
-instance Aux JobEnv where
+instance Env JobEnv where -- You need Env instance when you define environment.
+instance Aux JobEnv where -- You need Aux instance when you run the job queue.
 ```
 
 Define states that describe your state machine.
@@ -87,6 +88,11 @@ main = do
 
 Examples
 --------
+
+Please checkout the source and install examples using cabal.
+
+    > git clone ...
+    > cabal install jobqueue/ jobqueue-examples/
 
 ### Example 1. Hello, World
 
