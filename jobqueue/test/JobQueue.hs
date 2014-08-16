@@ -82,8 +82,7 @@ testJobQueue backend = do
     it "can be used concurrently" $ do
       let p = process $ \(Looping count) -> do
                 if count > 0
-                  then do
-                    liftIO (hPutStr stderr $ " " ++ show count) >> fork (Looping (count - 1))
+                  then liftIO (hPutStr stderr $ " " ++ show count) >> fork (Looping (count - 1))
                   else liftIO (hPutStrLn stderr ".") >> fin
           env0 = (JobEnv "hello")
       buildJobQueue backend "/concurrently_1" p $ \jq -> do

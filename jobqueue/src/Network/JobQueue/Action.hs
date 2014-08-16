@@ -26,7 +26,7 @@ import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Exception (SomeException(..))
+import Control.Exception (SomeException(..), toException)
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger (runLoggingT)
 import Control.Exception.Lifted (catch)
@@ -69,7 +69,14 @@ runAction env ju action = do
       Nothing -> return Nothing
 
 handlePatternMatchFail :: (Aux e, Env e, Unit a) => PatternMatchFail -> ActionT e a IO ()
-handlePatternMatchFail _e = none
+handlePatternMatchFail e = do
+  s <- get
+  if getCommits (fromMaybe def s) > 0
+    then do
+      ju <- getJobUnit <$> ask
+      $(logError) "pattern match fail: ! ({})" [desc ju]
+      throwError $ Unhandled (toException e)
+    else none
 
 handleSome :: (Aux e, Env e, Unit a) => SomeException -> ActionT e a IO b
 handleSome e = do
@@ -101,8 +108,8 @@ param (key, defaultValue) = do
       
 ----------------
 
-{- | Do a dirty I/O action to the external system.
-     If it doesn't change the state of the external system, you can use liftIO instead.
+{- | Do a dirty I/O action with a side effect to the external system.
+     If it doesn't change the state of the external system, you should use liftIO instead.
 -}
 commitIO :: (Env e, Unit a) => IO b -> ActionM e a b
 commitIO action = do

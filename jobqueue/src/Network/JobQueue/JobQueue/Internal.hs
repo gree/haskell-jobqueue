@@ -8,7 +8,6 @@ module Network.JobQueue.JobQueue.Internal where
 import qualified Data.ByteString.Char8 as BS
 import Control.Exception
 import Data.Time.Clock
-import System.Log.Logger
 import Control.Monad
 import Data.Maybe
 
