@@ -45,15 +45,15 @@ runActionState :: (Env e, Unit a) => JobActionState e a -> ActionFn e a
 runActionState (JobActionState { jobActions = actions } ) env ju = runActionState' actions
   where
     runActionState' actions' = case actions' of
-      [] -> return (Nothing)
+      [] -> return $ Right Nothing
       (act:acts) -> do
         r <- act env ju
         case r of
-          Nothing -> runActionState' acts
-          Just _ -> return (r)
+          Right Nothing -> runActionState' acts
+          _ -> return r
 
 runAction :: (Aux e, Env e, Unit a) => 
-             e -> a -> ActionT e a IO () -> IO (Maybe (Either Break (RuntimeState a)))
+             e -> a -> ActionT e a IO () -> IO (Either Break (Maybe (RuntimeState a)))
 runAction env ju action = do
   (e,r) <- flip runLoggingT (auxLogger env)
          $ flip runStateT Nothing
@@ -62,11 +62,7 @@ runAction env ju action = do
          $ runAM $ do
              when (toBeLogged ju) $ $(logWarn) "{}" [desc ju]
              action `catch` handlePatternMatchFail `catch` handleSome
-  case e of
-    Left b -> return $ Just $ Left b
-    Right () -> case r of
-      Just r' -> return $ Just $ Right r'
-      Nothing -> return Nothing
+  return $ either Left (const $ Right r) e
 
 handlePatternMatchFail :: (Aux e, Env e, Unit a) => PatternMatchFail -> ActionT e a IO ()
 handlePatternMatchFail e = do

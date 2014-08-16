@@ -52,7 +52,7 @@ peekJob' JobQueue { jqBackendQueue = bq } = do
         Nothing -> return (Nothing)
         Just job -> return (Just (job, nodeName, idName, version))
 
-executeJob' :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Maybe (Either Break (RuntimeState a)))
+executeJob' :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> IO (Either Break (Maybe (RuntimeState a)))
 executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState } env nodeName currentJob version = do
   currentTime <- getCurrentTime
   if jobOnTime currentJob < currentTime
@@ -61,30 +61,29 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
       when r $ void $ writeQueue bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
-      return (Nothing)
+      return $ Right Nothing
 
-afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (Either Break (RuntimeState a)) -> IO ()
+afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Either Break (Maybe (RuntimeState a)) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
-  Just res -> case res of
-    Right (RS mNextJu forks _) -> do
-      case mNextJu of
-        Just nextJu -> do
-          _r <- updateJob jqueue nodeName currentJob { jobState = Runnable, jobUnit = nextJu } (version+1)
-          return ()
-        Nothing -> do
-          _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
-          return ()
-      forM_ (reverse forks) $ \(forked, ontime) -> rescheduleJob jqueue ontime forked
-    Left (Failure _msg) -> do
-      n <- auxHandleFailure env (Just currentJob)
-      recover n
-    Left Retriable -> do
-      _r <- updateJob jqueue nodeName currentJob { jobState = Runnable } (version+1)
-      return ()
-    Left (Unhandled _someException) -> do
-      _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
-      return ()
-  Nothing -> recover Nothing -- nothing to do anymore
+  Right (Just (RS mNextJu forks _)) -> do
+    case mNextJu of
+      Just nextJu -> do
+        _r <- updateJob jqueue nodeName currentJob { jobState = Runnable, jobUnit = nextJu } (version+1)
+        return ()
+      Nothing -> do
+        _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
+        return ()
+    forM_ (reverse forks) $ \(forked, ontime) -> rescheduleJob jqueue ontime forked
+  Right (Nothing) -> recover Nothing -- nothing to do anymore
+  Left (Failure _msg) -> do
+    n <- auxHandleFailure env (Just currentJob)
+    recover n
+  Left Retriable -> do
+    _r <- updateJob jqueue nodeName currentJob { jobState = Runnable } (version+1)
+    return ()
+  Left (Unhandled _someException) -> do
+    _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
+    return ()
   where
     recover n = case n of
       Just nextJu -> do

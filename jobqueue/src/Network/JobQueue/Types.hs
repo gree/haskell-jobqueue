@@ -79,7 +79,7 @@ getCommits (RS _ _ cnt) = cnt
 
 -------------------------------- JobActionState
 
-type ActionFn e a = e -> a -> IO (Maybe (Either Break (RuntimeState a)))
+type ActionFn e a = e -> a -> IO (Either Break (Maybe (RuntimeState a)))
 
 data JobActionState e a = JobActionState { jobActions :: [ActionFn e a] }
 
