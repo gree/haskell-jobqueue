@@ -40,6 +40,9 @@ Library
                  , monad-logger
                  , template-haskell
                  , text-format
+                 , monad-control
+                 , transformers-base
+                 , lifted-base
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class

@@ -4,6 +4,7 @@
 module Network.JobQueue.Job (
     Job(jobState, jobUnit, jobCTime, jobOnTime, jobId, jobGroup, jobPriority, StopTheWorld)
   , JobState(..)
+  , buildActionState
   , process
   , createJob
   , createOnTimeJob
@@ -21,6 +22,9 @@ import Network.JobQueue.Action
 import Network.JobQueue.Job.Internal
 
 --------------------------------
+
+buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
+buildActionState jobs = execStateT (runS jobs) (JobActionState [])
 
 {- | Declare a function which accepts a unit and execute the action of it if possible.
 -}

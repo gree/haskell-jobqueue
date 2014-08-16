@@ -31,7 +31,6 @@ import Data.Maybe
 import Network.JobQueue.Class
 import Network.JobQueue.AuxClass
 import Network.JobQueue.Types
-import Network.JobQueue.Action
 import Network.JobQueue.Job
 import Network.JobQueue.Backend
 import Network.JobQueue.Backend.Class

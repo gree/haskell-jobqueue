@@ -36,6 +36,7 @@ data Looping = Looping Int deriving (Show, Read, Eq, Ord)
 instance Unit Looping where
   getPriority _ju = 1
   getRecovery _ju = (Looping 0)
+  toBeLogged _ = False
 
 instance Desc Looping where
 
@@ -79,10 +80,14 @@ testJobQueue backend = do
         countJobQueue jq `shouldReturn` 0
 
     it "can be used concurrently" $ do
-      let p = process $ \(Looping count) -> if count > 0 then commitIO (hPutStrLn stderr (show count)) >> fork (Looping (count - 1)) else fin
+      let p = process $ \(Looping count) -> do
+                if count > 0
+                  then do
+                    liftIO (hPutStr stderr $ " " ++ show count) >> fork (Looping (count - 1))
+                  else liftIO (hPutStrLn stderr ".") >> fin
           env0 = (JobEnv "hello")
       buildJobQueue backend "/concurrently_1" p $ \jq -> do
-        scheduleJob jq (Looping 1000)
+        scheduleJob jq (Looping 100)
         countJobQueue jq `shouldReturn` 1
       bracket (openSession backend) (closeSession) $ \session -> do
         let loop = \env jq' -> do

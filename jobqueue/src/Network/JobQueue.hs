@@ -118,7 +118,6 @@ import Control.Monad
 import Network.JobQueue.Types
 import Network.JobQueue.Class
 import Network.JobQueue.AuxClass
-import Network.JobQueue.Action
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
 import Network.JobQueue.Logger

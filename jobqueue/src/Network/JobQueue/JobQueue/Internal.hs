@@ -58,15 +58,11 @@ executeJob' jqueue@JobQueue { jqBackendQueue = bq, jqActionState = actionState }
   currentTime <- getCurrentTime
   if jobOnTime currentJob < currentTime
     then do
-      noticeM "jobqueue" (show currentJob)
-      runActionState actionState env (jobUnit currentJob) `catch` handleSome
+      runActionState actionState env (jobUnit currentJob)
     else do
       r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
       when r $ void $ writeQueue bq (pack $ currentJob { jobState = Runnable } ) (jobPriority currentJob)
       return (Nothing)
-  where
-    handleSome :: SomeException -> IO (Maybe (Either Break (RuntimeState a)))
-    handleSome _e = return Nothing
 
 afterExecuteJob :: (Aux e, Env e, Unit a) => JobQueue e a -> e -> String -> Job a -> Int -> Maybe (Either Break (RuntimeState a)) -> IO ()
 afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
@@ -79,19 +75,17 @@ afterExecuteJob jqueue env nodeName currentJob version mResult = case mResult of
         Nothing -> do
           _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
           return ()
-      forM_ (reverse forks) $ \f -> case f of
-        (forked, ontime) -> rescheduleJob jqueue ontime forked
+      forM_ (reverse forks) $ \(forked, ontime) -> rescheduleJob jqueue ontime forked
     Left (Failure _msg) -> do
       n <- auxHandleFailure env (Just currentJob)
       recover n
     Left Retriable -> do
       _r <- updateJob jqueue nodeName currentJob { jobState = Runnable } (version+1)
       return ()
-  Nothing -> do
-    -- let subject = "[" ++ shortDesc (jobUnit currentJob) ++ "] aborted"
-    -- n <- (failureHandleFn jqueue) Critical subject (desc (jobUnit currentJob))
-    -- recover n
-    recover Nothing
+    Left (Unhandled _someException) -> do
+      _r <- updateJob jqueue nodeName currentJob { jobState = Finished } (version+1)
+      return ()
+  Nothing -> recover Nothing -- nothing to do anymore
   where
     recover n = case n of
       Just nextJu -> do

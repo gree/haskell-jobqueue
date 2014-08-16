@@ -6,7 +6,6 @@
 
 module Network.JobQueue.Action (
     JobActionState
-  , buildActionState
   , runActionState
   , runAction
   , getEnv
@@ -27,9 +26,11 @@ import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Exception (catch)
+import Control.Exception (SomeException(..))
 import Control.Exception.Base (PatternMatchFail(..))
 import Control.Monad.Logger (runLoggingT)
+import Control.Exception.Lifted (catch)
+import Control.Monad.Base ()
 
 import Data.Maybe
 import Data.Time.Clock
@@ -40,51 +41,52 @@ import Network.JobQueue.AuxClass
 import Network.JobQueue.Types
 import Network.JobQueue.Logger
 
-buildActionState :: (Env e, Unit a) => JobM e a () -> IO (JobActionState e a)
-buildActionState jobs = execStateT (runS jobs) (JobActionState [])
-
 runActionState :: (Env e, Unit a) => JobActionState e a -> ActionFn e a
 runActionState (JobActionState { jobActions = actions } ) env ju = runActionState' actions
   where
     runActionState' actions' = case actions' of
       [] -> return (Nothing)
       (act:acts) -> do
-        r <- act env ju `catch` handleFail
+        r <- act env ju
         case r of
           Nothing -> runActionState' acts
           Just _ -> return (r)
 
-    handleFail :: PatternMatchFail -> IO (Maybe (Either Break (RuntimeState a)))
-    handleFail (PatternMatchFail _msg) = do
-      return (Nothing)
-
 runAction :: (Aux e, Env e, Unit a) => 
-             e -> a -> ActionM e a () -> IO (Maybe (Either Break (RuntimeState a)))
+             e -> a -> ActionT e a IO () -> IO (Maybe (Either Break (RuntimeState a)))
 runAction env ju action = do
   (e,r) <- flip runLoggingT (auxLogger env)
          $ flip runStateT Nothing
          $ flip runReaderT (ActionEnv env ju)
          $ runExceptT
          $ runAM $ do
-             when (toBeLogged ju) $ $(logNotice) "{}" [desc ju]
-             action
+             when (toBeLogged ju) $ $(logWarn) "{}" [desc ju]
+             action `catch` handlePatternMatchFail `catch` handleSome
   case e of
     Left b -> return $ Just $ Left b
     Right () -> case r of
       Just r' -> return $ Just $ Right r'
       Nothing -> return Nothing
 
+handlePatternMatchFail :: (Aux e, Env e, Unit a) => PatternMatchFail -> ActionT e a IO ()
+handlePatternMatchFail _e = none
+
+handleSome :: (Aux e, Env e, Unit a) => SomeException -> ActionT e a IO b
+handleSome e = do
+  $(logError) "unhandled exception: {}" [show e]
+  throwError $ Unhandled e
+
 --------------------------------
 
 {- | Get environment in action.
 -}
-getEnv :: (Env e, Unit a) => ActionM e a (e)
+getEnv :: (Env e, Unit a) => ActionM e a e
 getEnv = getJobEnv <$> ask
 
 {- | Get a parameter value with a key from the environment in action.
      This is a special function for ParamEnv.
 -}
-param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a (b)
+param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a b
 param (key, defaultValue) = do
   env <- getEnv
   case maybeRead defaultValue of
@@ -102,7 +104,7 @@ param (key, defaultValue) = do
 {- | Do a dirty I/O action to the external system.
      If it doesn't change the state of the external system, you can use liftIO instead.
 -}
-commitIO :: (Env e, Unit a) => IO (b) -> ActionM e a (b)
+commitIO :: (Env e, Unit a) => IO b -> ActionM e a b
 commitIO action = do
   do s <- get
      when (getCommits (fromMaybe def s) > 0) $ do
@@ -158,7 +160,7 @@ orNext ju = modify $ \s -> Just $ setNextJobIfEmpty ju $ fromMaybe def s
 {- | Finish a job.
 -}
 fin :: (Env e, Unit a) => ActionM e a ()
-fin = result def
+fin = modify $ \s -> Just $ emptyNextJob $ fromMaybe def s
 
 {- | If the unit passed by the job queue system cannot be processed by the
      action function, the function should call this.
