@@ -45,16 +45,12 @@ newMarker val = do
   var <- liftIO $ newTVarIO val
   return (liftIO $ readTVarIO var, liftIO . atomically . (writeTVar var))
 
-initialize jq = do
-  scheduleJob jq Initial
-  countJobQueue jq `shouldReturn` 1
-
 testAction :: String -> Spec
 testAction backend = do
-  describe "job queue" $ do
+  describe "action" $ do
     it "unhandled error" $ do
       (get, set) <- newMarker 0
-      let withJobQueue = buildJobQueue backend "/unhandled_error_1" $ do
+      go $ buildJobQueue backend "/unhandled_error_1" $ do
             process $ \Initial -> do
               set 1
               $(logWarn) "Throw an IOError." ()
@@ -65,19 +61,11 @@ testAction backend = do
             process $ \Recovery -> do
               set 3
               fin
-      withJobQueue $ \jq -> do
-        initialize jq
-        let loop = \env jq' -> do
-              executeJob jq' env
-              count <- countJobQueue jq'
-              when (count > 0) $ loop env jq'
-        loop (JobEnv "hello") jq
-        countJobQueue jq `shouldReturn` 0
       get `shouldReturn` 1
 
     it "abort and recover" $ do
       (get, set) <- newMarker 0
-      let withJobQueue = buildJobQueue backend "/abort_and_recover_1" $ do
+      go $ buildJobQueue backend "/abort_and_recover_1" $ do
             process $ \Initial -> do
               set 1
               $(logWarn) "Abort" ()
@@ -88,23 +76,16 @@ testAction backend = do
             process $ \Recovery -> do
               set 3
               fin
-      withJobQueue $ \jq -> do
-        initialize jq
-        let loop = \env jq' -> do
-              executeJob jq' env
-              count <- countJobQueue jq'
-              when (count > 0) $ loop env jq'
-        loop (JobEnv "hello") jq
-        countJobQueue jq `shouldReturn` 0
       get `shouldReturn` 3
 
----------------------------------------------------------------- Utils
-
-step :: (Aux e, Env e, Unit a) => e -> JobQueue e a -> Int -> IO ()
-step env jq c
-  | c > 0 = do
-    executeJob jq env
-    step env jq (pred c)
-  | otherwise = return ()
-
+  where
+    go withJobQueue = withJobQueue $ \jq -> do
+      scheduleJob jq Initial
+      countJobQueue jq `shouldReturn` 1
+      let loop = \env jq' -> do
+            executeJob jq' env
+            count <- countJobQueue jq'
+            when (count > 0) $ loop env jq'
+      loop (JobEnv "hello") jq
+      countJobQueue jq `shouldReturn` 0
 
