@@ -18,6 +18,19 @@ Source-Repository head
   type:     git
   location: https://github.com/gree/haskell-jobqueue.git
 
+Executable jobqueue-sample-hello
+  Ghc-Options:     -threaded -Wall -rtsopts
+  Build-Depends:   base >=4 && <5
+                 , jobqueue
+                 , network
+                 , bytestring
+                 , containers
+                 , transformers
+                 , data-default
+                 , hslogger
+  Main-is:         hello.hs
+  Extensions:      DeriveDataTypeable
+
 Executable jobqueue-sample-fibonacci
   Ghc-Options:     -threaded -Wall -rtsopts
   Build-Depends:   base >=4 && <5

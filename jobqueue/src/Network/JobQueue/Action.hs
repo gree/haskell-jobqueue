@@ -20,6 +20,7 @@ module Network.JobQueue.Action (
   , abort
   , commitIO
   , liftIO
+  , yield
   ) where
 
 import Control.Applicative
@@ -117,6 +118,13 @@ commitIO action = do
   liftIO action
 
 ----------------
+
+{- | Yield execution
+-}
+yield :: (Env e, Unit a) => ActionM e a ()
+yield = do
+  ju <- getJobUnit <$> ask
+  forkWith ju Nothing
 
 {- | Create a job with a unit and schedule it.
 -}
