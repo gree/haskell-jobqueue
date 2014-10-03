@@ -3,7 +3,7 @@
 
 module Network.JobQueue.Util
   ( waitForAllJobs
-  , waitWhile
+  , waitUntilMatch
   ) where
 
 import Data.Maybe
@@ -13,9 +13,13 @@ import Network.JobQueue.Class
 import Network.JobQueue.Job
 import Network.JobQueue.JobQueue
 import Network.JobQueue.JobQueue.Internal
+import Text.Regex.Posix
 
 waitForAllJobs :: (Env e, Unit a) => JobQueue e a -> Int -> ((Maybe (Job a)) -> Int -> IO ()) -> IO (Maybe (Job a))
 waitForAllJobs jq timeoutCount = waitWhile jq (\mjob count -> isJust mjob && count < timeoutCount)
+
+waitUntilMatch :: (Env e, Unit a) => JobQueue e a -> String -> Int -> ((Maybe (Job a)) -> Int -> IO ()) -> IO (Maybe (Job a))
+waitUntilMatch jq pattern timeoutCount = waitWhile jq (\mjob count -> not (pattern =~ show mjob) && count < timeoutCount)
 
 waitWhile :: (Env e, Unit a)
              => JobQueue e a

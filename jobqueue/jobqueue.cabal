@@ -45,6 +45,7 @@ Library
                  , monad-control
                  , transformers-base
                  , lifted-base
+                 , regex-posix
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
