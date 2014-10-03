@@ -3,6 +3,8 @@ import Control.Concurrent
 import Control.Monad
 import System.Environment hiding (getEnv)
 import Network.JobQueue
+import Network.JobQueue.Util
+import System.IO
 
 data JobEnv = JobEnv {
     jeLimit :: Integer
@@ -26,8 +28,10 @@ main = do
     (loc:name:args') -> do
       let withJobQueue = buildJobQueue loc name $ do
             process $ \(ExecuteStep r) -> do
-              commitIO (putStrLn "executing")
-              commitIO (threadDelay 1000000)
+              commitIO $ do
+                hPutStr stdout " executing"
+                hFlush stdout
+              liftIO $ threadDelay 1000000
               env <- getEnv
               if r < jeLimit env
                 then next $ ExecuteStep (r+1)
@@ -37,6 +41,9 @@ main = do
         ("init":[]) -> withJobQueue $ \jq -> scheduleJob jq $ ExecuteStep 0
         ("suspend":[]) -> withJobQueue $ \jq -> void $ suspendJobQueue jq
         ("resume":[]) -> withJobQueue $ \jq -> void $ resumeJobQueue jq
+        ("monitor":[]) -> withJobQueue $ \jq -> void $ waitForAllJobs jq 100 $ \mjob count -> case mjob of
+          Just job -> hPutStr stderr $ "(" ++ ((shortDesc $ jobUnit job) ++ " " ++ (show $ jobState job)) ++ "/" ++ show count ++ ")"
+          Nothing -> hPutStr stderr $ "(" ++ (show count) ++ " ticks)"
         (cmd:_) -> putStrLn $ "unknown command: " ++ cmd
         _ -> putStrLn $ "invalid operation"
     _ -> return ()
