@@ -19,7 +19,7 @@ waitForAllJobs :: (Env e, Unit a) => JobQueue e a -> Int -> ((Maybe (Job a)) -> 
 waitForAllJobs jq timeoutCount = waitWhile jq (\mjob count -> isJust mjob && count < timeoutCount)
 
 waitUntilMatch :: (Env e, Unit a) => JobQueue e a -> String -> Int -> ((Maybe (Job a)) -> Int -> IO ()) -> IO (Maybe (Job a))
-waitUntilMatch jq pattern timeoutCount = waitWhile jq (\mjob count -> not (pattern =~ show mjob) && count < timeoutCount)
+waitUntilMatch jq pattern timeoutCount = waitWhile jq (\mjob count -> not (show mjob =~ pattern) && count < timeoutCount)
 
 waitWhile :: (Env e, Unit a)
              => JobQueue e a
