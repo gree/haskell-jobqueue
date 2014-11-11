@@ -17,9 +17,23 @@ import qualified Data.Text.Lazy as LT
 import qualified Control.Monad.Logger as ML
 import Language.Haskell.TH.Syntax (Q, Exp, qLocation)
 import Data.Text.Format
+import Control.Applicative
+import Control.Monad.Reader
+
+import Network.JobQueue.Types
+import Network.JobQueue.Class
 
 logTH :: ML.LogLevel -> Q Exp
-logTH level = [|\a b -> ML.monadLoggerLog $(qLocation >>= ML.liftLoc) (T.pack "") level (LT.toStrict $ format (a :: Format) b)|]
+logTH level = 
+  [|\a b -> do
+    ju <- getJobUnit <$> ask
+    ML.monadLoggerLog $(qLocation >>= ML.liftLoc) (T.pack "") level $ T.concat
+      [ (LT.toStrict $ format (a :: Format) b)
+      , " ("
+      , T.pack $ desc ju
+      , ")"
+      ]
+  |]
 
 logDebug :: Q Exp
 logDebug = logTH ML.LevelDebug
