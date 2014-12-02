@@ -103,6 +103,7 @@ module Network.JobQueue (
   , forkOnTime
   , abort
   , getEnv
+  , Param
   , param
   , commitIO
   , liftIO
@@ -122,6 +123,7 @@ import Network.JobQueue.AuxClass
 import Network.JobQueue.JobQueue
 import Network.JobQueue.Job
 import Network.JobQueue.Logger
+import Network.JobQueue.Param (Param,param)
 
 {- | Build a function that takes a function (('JobQueue' a -> 'IO' ()) -> IO ()) as its first parameter.
 
