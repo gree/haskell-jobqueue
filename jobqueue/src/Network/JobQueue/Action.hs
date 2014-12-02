@@ -9,7 +9,6 @@ module Network.JobQueue.Action (
   , runActionState
   , runAction
   , getEnv
-  , param
   , next
   , orNext
   , fin
@@ -86,22 +85,6 @@ handleSome e = do
 -}
 getEnv :: (Env e, Unit a) => ActionM e a e
 getEnv = getJobEnv <$> ask
-
-{- | Get a parameter value with a key from the environment in action.
-     This is a special function for ParamEnv.
--}
-param :: (ParamEnv e, Unit a, Read b) => (String, String) -> ActionM e a b
-param (key, defaultValue) = do
-  env <- getEnv
-  case maybeRead defaultValue of
-    Nothing -> do
-      $(logCritical) "internal error. no parse: " [show (key, defaultValue)]
-      abort
-    Just defaultValue' -> case lookup key (envParameters env) of
-      Just value -> return (fromMaybe defaultValue' (maybeRead value))
-      Nothing -> return (defaultValue')
-  where
-    maybeRead = fmap fst . listToMaybe . reads
       
 ----------------
 

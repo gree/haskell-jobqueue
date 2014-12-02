@@ -9,12 +9,6 @@ module Network.JobQueue.Class where
 -}
 class Env a where
 
-{- | Environment with a parameter set
--}
-class (Env a) => ParamEnv a where
-  envParameters :: a -> [(String, String)]
-  envParameters _env = []
-
 {- | Description class
 -}
 class (Show a) => Desc a where

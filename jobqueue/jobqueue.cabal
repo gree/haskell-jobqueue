@@ -46,6 +46,7 @@ Library
                  , transformers-base
                  , lifted-base
                  , regex-posix
+                 , aeson
   Hs-source-dirs:  src
   Exposed-modules: Network.JobQueue
                  , Network.JobQueue.Class
@@ -63,6 +64,7 @@ Library
                  , Network.JobQueue.Backend.Sqlite3
                  , Network.JobQueue.Logger
                  , Network.JobQueue.Util
+                 , Network.JobQueue.Param
   Other-modules:   Network.JobQueue.Backend.Zookeeper.ZookeeperQueue
   Extensions:      DeriveDataTypeable
 
