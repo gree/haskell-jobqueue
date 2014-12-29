@@ -22,6 +22,9 @@ before_install:
 
 install:
  - cabal update
+ - cabal sandbox init
+ - cabal install hpc-coveralls --bindir=$HOME/.cabal/bin/
+ - cabal sandbox delete
  - cabal install happy
  - cabal install 'double-conversion < 1'
  - cabal install "monad-control ${MONAD_CONTROL_VERSION}"
@@ -43,3 +46,11 @@ script:
       echo "expected '$SRC_TGZ' not found";
       exit 1;
    fi
+
+after_script:
+ - cd ..
+ - cabal clean
+ - cabal configure --enable-tests -v2 --enable-library-coverage # -v2 provides useful information for debugging
+ - cabal build
+ - cabal test
+ - hpc-coveralls --exclude-dir=test test
