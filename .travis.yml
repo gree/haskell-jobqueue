@@ -1,8 +1,12 @@
 env:
+ - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
  - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
  - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
  - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
  - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
  - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
  - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
 
@@ -20,6 +24,7 @@ install:
  - cabal update
  - cabal install happy
  - cabal install 'double-conversion < 1'
+ - cabal install "monad-control ${MONAD_CONTROL_VERSION}"
  - cabal install --only-dependencies --enable-tests --enable-benchmarks --extra-include-dirs=/usr/include/zookeeper
 
 script:
