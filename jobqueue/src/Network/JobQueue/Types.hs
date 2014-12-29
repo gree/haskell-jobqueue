@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies, MultiParamTypeClasses, UndecidableInstances #-}
-
+{-# LANGUAGE CPP #-}
 
 module Network.JobQueue.Types
   ( JobActionState(..)
@@ -110,17 +110,32 @@ instance MonadTrans (ActionT e a) where
   lift = ActionT . lift . lift . lift . lift
 
 instance MonadTransControl (ActionT e a) where
+#if MIN_VERSION_monad_control(1,0,0)
+  type StT (ActionT e a) b = (Either Break b, Maybe (RuntimeState a))
+  restoreT = ActionT . ExceptT . ReaderT . const . StateT . const
+           . LoggingT . const
+  liftWith f = ActionT . ExceptT . ReaderT $ \r -> StateT $ \s -> LoggingT $ \l ->
+    liftM (\x -> (Right x, s))
+          (f $ \t -> (runLoggingT (runStateT (runReaderT (runExceptT (runAM t)) r) s) l))
+#else
   newtype StT (ActionT e a) b = StAction { unStAction :: (Either Break b, Maybe (RuntimeState a)) }
   restoreT = ActionT . ExceptT . ReaderT . const . StateT . const
            . LoggingT . const . liftM unStAction
   liftWith f = ActionT . ExceptT . ReaderT $ \r -> StateT $ \s -> LoggingT $ \l ->
     liftM (\x -> (Right x, s))
           (f $ \t -> liftM StAction (runLoggingT (runStateT (runReaderT (runExceptT (runAM t)) r) s) l))
+#endif
 
 instance MonadBaseControl base m => MonadBaseControl base (ActionT e a m) where
+#if MIN_VERSION_monad_control(1,0,0)
+  type StM (ActionT e a m) b = ComposeSt (ActionT e a) m b
+  liftBaseWith = defaultLiftBaseWith
+  restoreM = defaultRestoreM
+#else
   newtype StM (ActionT e a m) b = StMActionT { unStMActionT :: ComposeSt (ActionT e a) m b }
   liftBaseWith = defaultLiftBaseWith StMActionT
   restoreM = defaultRestoreM unStMActionT
+#endif
 
 setResult :: (Unit a) => Maybe (RuntimeState a) -> Maybe (RuntimeState a) -> Maybe (RuntimeState a)
 setResult result _ = result
