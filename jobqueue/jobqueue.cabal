@@ -1,5 +1,5 @@
 Name:           jobqueue
-Version:        0.1.4
+Version:        0.1.5
 Synopsis:       A job queue library
 License:        MIT
 License-File:   LICENSE
@@ -82,5 +82,8 @@ Test-Suite test
                  , stm
   Type:            exitcode-stdio-1.0
   Hs-source-dirs:  test
+  Other-modules:   Action
+                 , BackendQueue
+                 , JobQueue
   Main-is:         Main.hs
 
