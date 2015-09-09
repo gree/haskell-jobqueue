@@ -4,4 +4,6 @@ packages:
 - jobqueue-examples/
 extra-deps:
 - hzk-2.1.0
-resolver: nightly-2015-08-26
+- HDBC-2.4.0.1
+- HDBC-sqlite3-2.3.3.1
+resolver: lts-3.4
