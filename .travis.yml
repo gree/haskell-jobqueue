@@ -1,23 +1,27 @@
 env:
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
- - GHCVER=7.6.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
- - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
- - GHCVER=7.8.2 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
- - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
- - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
- - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
- - GHCVER=7.8.3 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.6.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.6.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.6.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.6.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.8.2 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.8.2 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.8.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.8.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.8.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.8.3 CABALVER=1.18 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
+ - GHCVER=7.10.2 CABALVER=1.22 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"     MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.10.2 CABALVER=1.22 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181" MONAD_CONTROL_VERSION="<= 0.3.3.0"
+ - GHCVER=7.10.2 CABALVER=1.22 JOBQUEUE_TEST_BACKEND="sqlite3://test.sqlite3"
+ - GHCVER=7.10.2 CABALVER=1.22 JOBQUEUE_TEST_BACKEND="zookeeper://localhost:2181"
 
 before_install:
  - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
  - travis_retry sudo apt-add-repository ppa:nikicat/zookeeper -y
  - travis_retry sudo apt-get update
- - travis_retry sudo apt-get install cabal-install-1.18 ghc-$GHCVER
+ - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
  - travis_retry sudo apt-get install libzookeeper-mt-dev
  - travis_retry sudo apt-get install zookeeperd
- - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/1.18/bin:$PATH
+ - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
  - cd jobqueue
 
 install:
@@ -38,7 +42,7 @@ script:
  - cabal check
  - cabal sdist   # tests that a source-distribution can be generated
 
- - export SRC_TGZ=$(cabal-1.18 info . | awk '{print $2 ".tar.gz";exit}') ;
+ - export SRC_TGZ=$(cabal-$CABALVER info . | awk '{print $2 ".tar.gz";exit}') ;
    cd dist/;
    if [ -f "$SRC_TGZ" ]; then
       cabal install "$SRC_TGZ";
