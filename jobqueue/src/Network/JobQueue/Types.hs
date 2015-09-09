@@ -92,7 +92,7 @@ instance Default (JobActionState e a) where
 -------------------------------- ActionM
 
 newtype (Env e, Unit a) => JobM e a b = JobM { runS :: StateT (JobActionState e a) IO b }
-  deriving (Monad, MonadIO, Functor, MonadState (JobActionState e a))
+  deriving (Monad, MonadIO, Functor, Applicative, MonadState (JobActionState e a))
 
 data ActionEnv e a = ActionEnv
   { getJobEnv :: e
