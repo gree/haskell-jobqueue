@@ -1,0 +1,9 @@
+flags: {}
+packages:
+- jobqueue/
+- jobqueue-examples/
+extra-deps:
+- hzk-2.1.0
+- HDBC-2.4.0.1
+- HDBC-sqlite3-2.3.3.1
+resolver: lts-3.4
