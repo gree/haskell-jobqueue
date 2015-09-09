@@ -21,7 +21,7 @@ before_install:
  - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
  - travis_retry sudo apt-get install libzookeeper-mt-dev
  - travis_retry sudo apt-get install zookeeperd
- - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/1.18/bin:$PATH
+ - export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
  - cd jobqueue
 
 install:
@@ -42,7 +42,7 @@ script:
  - cabal check
  - cabal sdist   # tests that a source-distribution can be generated
 
- - export SRC_TGZ=$(cabal-1.18 info . | awk '{print $2 ".tar.gz";exit}') ;
+ - export SRC_TGZ=$(cabal-$CABALVER info . | awk '{print $2 ".tar.gz";exit}') ;
    cd dist/;
    if [ -f "$SRC_TGZ" ]; then
       cabal install "$SRC_TGZ";
